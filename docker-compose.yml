@@ -1,0 +1,18 @@
+# Docker compose command
+# sudo docker compose up -d
+
+# Version
+version: '1'
+
+services:
+
+# Future server
+  future_container:
+    image: ?
+    container_name: none_yet
+    ports:
+      - ?:?
+    environment:
+      ?: ?
+    volumes:
+      - ./something-volume:/opt/?
