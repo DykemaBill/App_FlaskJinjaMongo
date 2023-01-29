@@ -198,6 +198,82 @@ input:valid+span:after {
     content: '$'; 
 }
 
+/* Config page */
+.datalarge{
+  border: none;
+  color: rgb(245, 245, 245);
+  padding: 7px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+}
+.prod{
+  background-color: rgb(80, 181, 83);
+}
+.maint{
+  background-color: rgb(217, 79, 79);
+}
+.new{
+  background-color: rgb(158, 166, 158);
+}
+.warn{
+  background-color: rgb(199, 185, 25);
+}
+.control{
+  background-color: rgb(103, 42, 104);
+}
+.select_no{
+  color: rgb(190, 190, 190);
+  background-color: rgb(154, 158, 105);
+  border-radius: 8px;
+}
+.select_yes{
+  background-color: rgb(164, 175, 12);
+  border-radius: 8px;
+}
+.saved{
+  color: rgb(190, 190, 190);
+  background-color: rgb(124, 130, 137);
+  border-radius: 12px;
+}
+.save{
+  background-color: rgb(31, 86, 163);
+  border-radius: 12px;
+}
+.create{
+  background-color: rgb(103, 42, 104);
+  border-radius: 12px;
+}
+.del{
+  background-color: rgb(195, 124, 9);
+  border-radius: 12px;
+}
+.dis{
+  color: rgb(190, 190, 190);
+  background-color: rgb(183, 147, 90);
+  border-radius: 12px;
+}
+.dbcheck{
+  border: none;
+  color: white;
+  padding: 7px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.dbcheck_no{
+  color: rgb(190, 190, 190);
+  background-color: rgb(136, 123, 145);
+}
+.dbcheck_yes{
+  background-color: rgb(149, 101, 184);
+}
+
 /* Safari needs this or placeholder text is not readable */
 ::placeholder{
   color: rgb(141, 220, 222);
