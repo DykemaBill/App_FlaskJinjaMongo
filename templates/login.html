@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block body %}
+
+        <script src="{{ url_for('static', filename='passwordcheck.js') }}"></script>
+
+        <div>
+
+            <div class="formarea">
+                <div>
+                    <div>
+                        <form method="POST">
+
+                            <p>Login<br><input type="login" class="login new" name="user_login" pattern="[a-z0-9_]{7,17}" title="Must contain at least one lowercase letter, no special characters, and be 7 to 17 characters" required autofocus><span></span></p>
+
+                            <p>Password<br><input type="password" id="passfield" class="login new" name="user_pass" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{9,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 9 or more characters" required onclick="fromClicked()" onkeyup="fromType(this)"><span></span></p>
+
+                            <input type="text" name="returnto" value="{{ returnto }}" hidden>
+                            
+                    </div>
+                </div>
+            </div>
+
+            <br>
+
+            <div class="formarea">
+                            <input class="addr save" type="submit" value="Login" formaction="/login">
+                        </form>
+                <a href="/loginnew"><button class="addr save">New Account</button></a>
+            </div>
+
+        </div>
+
+{% endblock %}

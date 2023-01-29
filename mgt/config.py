@@ -1,7 +1,6 @@
 # Import libraries
 import sys, json, time
 import logging, logging.handlers
-import encryptpass as encryptpass
 
 # Read configuration
 def read_cfg(config_file):
@@ -45,9 +44,6 @@ def read_cfg(config_file):
 
             # Read SMTP server name
             smtp_server = cfg_data['smtp']
-
-            # Read password decryption key
-            decryption_key = cfg_data['decryptionkey']
 
             # Configuration values
             config_error = False

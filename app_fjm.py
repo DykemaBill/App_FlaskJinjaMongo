@@ -1,6 +1,8 @@
+# The 2 test users in the users.cfg file have the following starter password
+## T3stUs3rP@ssword
+
 # Import libraries
 from flask import Flask, g, render_template, request, session, redirect, url_for
-from werkzeug.utils import secure_filename
 from datetime import timedelta, datetime
 import bcrypt, re, os, sys, platform
 import mgt.emailalert as emailalert
@@ -40,11 +42,20 @@ def orgs_load():
     orgs = config.read_orgs(orgs_file)
 orgs_load()
 
+# Decryption key for encrypted database password
+## Run the following to generate your own key:
+##   cd mgt
+##   python3 encryptpass.py --key
+decryption_key = 'BlXc6pJrNwMNmsRCVnTKiNFCfotzU1ICHgUoMfbOQfU='
+## Once you generate a key, then you can do the following to generate the encrypted password:
+##   python3 encryptpass.py --encrypt BlXc6pJrNwMNmsRCVnTKiNFCfotzU1ICHgUoMfbOQfU= mongodev
+## Add the encrypted password to the settings.cfg where you see "db_conn_pass"
+
 # Setup logging
 logger = config.setup_log(log_file, configuration['logfilesize'][0], configuration['logfilesize'][1])
 
 # Starting up
-logger.info('****====****====****====****====**** App Starting ****====****====****====****====****')
+logger.info('****====****====****====****====****====**** App Starting ****====****====****====****====****====****')
 
 # Config values write out to log
 if configuration['error'] == True:
@@ -164,28 +175,6 @@ def session_setup():
     else:
         return True
 
-# Get user organization name for paths
-def org_name_setup():
-    org_name = "unknown"
-    org_name_path = "unknown"
-    # Find the organization name
-    for user_org in orgs:
-        if user_org['_index'] == g.user['org']:
-            org_name = user_org['name']
-            org_name_path = re.sub('[^A-Za-z0-9]+', '', org_name)
-    return org_name_path
-
-# Uploaded file name and FTP settings to use based on the user organization
-def ftp_setup():
-    file_name = "unknown"
-    ftp_host = list([ "localhost", 22, "user", "password", "/" ])
-    # Find the organization upload file name
-    for user_org in orgs:
-        if user_org['_index'] == g.user['org']:
-            file_name = user_org['upload_name']
-            ftp_host = user_org['ftp_host']
-    return file_name, ftp_host
-
 # Endpoint pre-processing
 @fjm_app.before_request
 def before_request():
@@ -204,19 +193,19 @@ def landing():
         return render_template('landing.html')
             
 # Logs page
-@fjm_app.route('/logs')
-def datalogs():
+@fjm_app.route('/status')
+def status():
     if int(session['user_id']) == 999999999999: # User is a guest
         # Put a delay in to slow denial-of-service attacks
         # time.sleep(5)
-        logger.info(request.remote_addr + ' ==> Data logs page denied (' + str(g.user['login']) + ')')
+        logger.info(request.remote_addr + ' ==> Status page denied (' + str(g.user['login']) + ')')
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     elif int(g.org['_index']) == 999999999999: # User is not assigned to an organization
-        logger.info(request.remote_addr + ' ==> Data logs page denied for no organization (' + str(g.user['login']) + ')')
+        logger.info(request.remote_addr + ' ==> Status page denied for no organization (' + str(g.user['login']) + ')')
         return redirect(url_for('landing'))
     if g.user['admin'] == False: # User is not an admin
         # Show server status page access error
-        logger.info(request.remote_addr + ' ==> Data logs page denied for none admin (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+        logger.info(request.remote_addr + ' ==> Status page denied for none admin (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
         return render_template('status.html', pagetitle="You must be admin to view this page")
     running_python = sys.version.split('\n')
     running_host = platform.node()
@@ -228,9 +217,8 @@ def datalogs():
     except IOError:
         print('Problem opening ' + log_file + ', check to make sure your log file location is valid.')
         log_data = "Unable to read log file " + log_file
-    logger.info(request.remote_addr + ' ==> Data logs page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+    logger.info(request.remote_addr + ' ==> Status page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     return render_template('status.html', running_python=running_python, running_host=running_host, running_os=running_os, running_hardware=running_hardware, config_data=configuration, log_data=log_data)
-
 
 # Login page
 @fjm_app.route('/login', methods=['GET', 'POST'])
@@ -501,6 +489,13 @@ def loginpassword():
             # Show login password change page on initial GET request
             logger.info(request.remote_addr + ' ==> Login password change page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
             return render_template('loginpassword.html', pagetitle="Change your password")
+
+# Darkmode setting
+@fjm_app.route('/darkmode')
+def darkmode():
+    logger.info(request.remote_addr + ' ==> Darkmode change (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+    # Place holder page
+    return render_template('placeholder.html')
 
 # Run in debug mode if started from CLI (http://localhost:5000)
 if __name__ == '__main__':
