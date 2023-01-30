@@ -2,13 +2,13 @@
 # sudo docker compose up -d
 
 # Using mongodev user/password credentials for development only
-version: '3.7'
+version: '1'
 
 services:
 
 # MongoDB server
   mongodb_fjm:
-    image: mongo:4.4.19
+    image: mongo:4.4.19-rc0-focal
     container_name: mongodb_fjm
     ports:
       - 27017:27017
