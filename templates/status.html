@@ -34,13 +34,11 @@
         <pre>    Width: {{ config_data['logosize'][0] }}</pre>
         <pre>   Height: {{ config_data['logosize'][1] }}</pre>
         <pre>Team: {{ config_data['team'] }}</pre>
-        <pre>Data Folders:</pre>
-        <pre>        Root: {{ config_data['datafolders'][0] }}</pre>
-        <pre>    Incoming: {{ config_data['datafolders'][1] }}</pre>
-        <pre>  Processing: {{ config_data['datafolders'][2] }}</pre>
-        <pre>   Converted: {{ config_data['datafolders'][3] }}</pre>
-        <pre>   Completed: {{ config_data['datafolders'][4] }}</pre>
-        <pre>    Max Size: {{ config_data['datafolders'][5] }}</pre>
+        <pre>Database Settings: (not implemented yet)</pre>
+        <pre>   Server: {{ config_data['db_conn_host'] }}</pre>
+        <pre> Database: {{ config_data['db_conn_database'] }}</pre>
+        <pre>     Type: {{ config_data['db_conn_type'] }}</pre>
+        <pre>  Account: {{ config_data['db_conn_acct'] }}</pre>
     
     </div>
     
@@ -57,8 +55,6 @@
 
     <div class="main">
         <div class="formarea">
-            <a href="/dataupload"><button class="datalarge save">Upload Data File for Payments</button></a><br><br>
-            <h2><a href="/history">Previous Data Files Uploaded</a></h2>
             <a href="/loginpassword">Password</a><br><br>
             <a href="/logout">Logout</a><br><br>
         </div>
