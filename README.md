@@ -6,7 +6,7 @@ Application build with Python Flask/Jinja2 and MongoDB
 - If no user exists, prompt user to create one at login - 
 
 # Bugs that need to be fixed
-- Password hash not working - 
+- Password hash not working - FIXED
 
 # Future ideas
 - None yet
