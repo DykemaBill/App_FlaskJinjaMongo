@@ -3,6 +3,7 @@ Application build with Python Flask/Jinja2 and MongoDB
 
 # To-Do's for the author
 - Build a simple version of the application - 
+- Implement dunder init files - 
 - If no user exists, prompt user to create one at login - 
 
 # Bugs that need to be fixed
