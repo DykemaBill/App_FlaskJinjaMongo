@@ -1,6 +1,7 @@
 # Import libraries
 import sys, json, time
 import logging, logging.handlers
+import mgt.encryptpass as encryptpass
 
 # Read configuration
 def read_cfg(config_file):
@@ -12,13 +13,33 @@ def read_cfg(config_file):
     web_logosize = list([ 100, 100 ]) # This is width and height
     logfilesize = list([ 10000, 9 ]) # 10000 is 10k, 9 is 10 total copies
     support_team = "Company"
+    
+    # Datbase configuration variables
+    db_connection = "willbesetusingfourpartsbelow"
+    db_conn_type = "dbtype"
+    db_conn_acct = "youraccount"
+    db_conn_pass = "yourpassword"
+    db_conn_pass_encrypted = "yourpasswordencrypted"
+    db_conn_host = "yourdbhost"
+    db_conn_database = "yourdatabase"
+    db_conn_options = "youroptions"
+    db_collections = list([ 'firstone', 'secondone', 'thirdone', 'etc' ])
+
+    # Assume there is a problem until we know there is not
     config_error = True
-    data_folders = list([ "data", "incoming", "processing", "completed", 1000000, 6 ]) # 1MB upload default, 6 org decimal places
-    decryption_key = "notsetyet" # Used to decrypt any stored passwords
 
     # Defaults
     config_values = dict({'error': config_error, 'email': support_email, 'smtp': smtp_server, 'logfilesize': logfilesize,
-     'logo': web_logo, 'logosize':  web_logosize, 'team': support_team, 'decryptionkey': decryption_key})
+     'logo': web_logo, 'logosize':  web_logosize, 'team': support_team, 'db_conn': db_connection, 'db_coll': db_collections})
+
+    # Decryption key for encrypted database password
+    ## Run the following to generate your own key:
+    ##   cd mgt
+    ##   python3 encryptpass.py --key
+    decryption_key = 'BlXc6pJrNwMNmsRCVnTKiNFCfotzU1ICHgUoMfbOQfU='
+    ## Once you generate a key, then you can do the following to generate the encrypted password:
+    ##   python3 encryptpass.py --encrypt BlXc6pJrNwMNmsRCVnTKiNFCfotzU1ICHgUoMfbOQfU= mongodev
+    ## Add the encrypted password to the settings.cfg where you see "db_conn_pass"
 
     # Read configuration file
     try:
@@ -45,10 +66,32 @@ def read_cfg(config_file):
             # Read SMTP server name
             smtp_server = cfg_data['smtp']
 
+            # Read database settings
+            # Read DB type
+            db_conn_type = cfg_data['db_conn'][0]
+            # Read DB account
+            db_conn_acct = cfg_data['db_conn'][1]
+            # Read DB encrypted password
+            db_conn_pass_encrypted = cfg_data['db_conn'][2]
+            # Decrypt DB byte to plain text password
+            db_conn_pass = encryptpass.passdecrypt(decryption_key, db_conn_pass_encrypted)
+            # Read DB host name
+            db_conn_host = cfg_data['db_conn'][3]
+            # Read DB name
+            db_conn_database = cfg_data['db_conn'][4]
+            # Read connection options
+            db_conn_options = cfg_data['db_conn'][5]
+            # Assemble connection string
+            db_connection = db_conn_type + "://" + db_conn_acct + ":" + db_conn_pass + "@" + db_conn_host + "/" + db_conn_database + db_conn_options
+            # Database collections
+            db_collections.clear()
+            db_collections.append(cfg_data['db_coll'][0])
+            db_collections.append(cfg_data['db_coll'][1])
+
             # Configuration values
             config_error = False
             config_values = dict({'error': config_error, 'email': support_email, 'smtp': smtp_server, 'logfilesize': logfilesize,
-             'logo': web_logo, 'logosize':  web_logosize, 'team': support_team})
+             'logo': web_logo, 'logosize':  web_logosize, 'team': support_team, 'db_conn': db_connection, 'db_coll': db_collections})
 
     except IOError as file_error:
         print('Problem opening ' + config_file + ', error received is: ' + str(file_error))
@@ -161,7 +204,7 @@ def setup_log(log_file, log_size, log_backups):
 
 # Get command line arguments
 if __name__ == "__main__":
-    if (len(sys.argv) == 3) and ((sys.argv[1] == "--cfg") or (sys.argv[1] == "--users")):
+    if (len(sys.argv) == 3) and ((sys.argv[1] == "--cfg") or (sys.argv[1] == "--users") or (sys.argv[1] == "--orgs")):
         if sys.argv[1] == "--cfg":
             config_file_name = sys.argv[2]
             print ("Config file:", config_file_name)
@@ -174,7 +217,14 @@ if __name__ == "__main__":
             users = list({})
             users = read_users(users_file_name)
             print ("Returned users: " + str(users))
+        if sys.argv[1] == "--orgs":
+            orgs_file_name = sys.argv[2]
+            print ("Organizations file:", orgs_file_name)
+            orgs = list({})
+            orgs = read_orgs(orgs_file_name)
+            print ("Returned organizations: " + str(orgs))
     else:
         print ("Syntax:")
         print ("        " + sys.argv[0] + " --cfg 'config file name'")
         print ("        " + sys.argv[0] + " --users 'users file name'")
+        print ("        " + sys.argv[0] + " --orgs 'organizations file name'")

@@ -42,15 +42,6 @@ def orgs_load():
     orgs = config.read_orgs(orgs_file)
 orgs_load()
 
-# Decryption key for encrypted database password
-## Run the following to generate your own key:
-##   cd mgt
-##   python3 encryptpass.py --key
-decryption_key = 'BlXc6pJrNwMNmsRCVnTKiNFCfotzU1ICHgUoMfbOQfU='
-## Once you generate a key, then you can do the following to generate the encrypted password:
-##   python3 encryptpass.py --encrypt BlXc6pJrNwMNmsRCVnTKiNFCfotzU1ICHgUoMfbOQfU= mongodev
-## Add the encrypted password to the settings.cfg where you see "db_conn_pass"
-
 # Setup logging
 logger = config.setup_log(log_file, configuration['logfilesize'][0], configuration['logfilesize'][1])
 
