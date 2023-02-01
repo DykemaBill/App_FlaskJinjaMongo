@@ -1,14 +1,8 @@
 {% extends 'base.html' %}
 {% block body %}
 
-        {% if g.user.login != 'guest' and g.org._index|int() != 999999999999 %}
         <div class="main">
-
-            <div class="formarea">
-                <br>
-                <h2>Collections</h2>
-            </div>
-
+            
             <div class="buttonarea">
 
                 {% for collection in config_data['db_coll'] %}
@@ -16,11 +10,9 @@
                     <button class="datalarge save">{{ collection }}</button>
                 </a>
                 {% endfor %}
-                <br><br><br><br><br><br>
 
             </div>
-
+        
         </div>
-        {% endif %}
 
 {% endblock %}

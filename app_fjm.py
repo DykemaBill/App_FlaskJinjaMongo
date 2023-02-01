@@ -184,14 +184,44 @@ def landing():
     if int(g.org['_index']) == 999999999999: # User is not assigned to an organization
         return render_template('landing.html', pagetitle="You must be assigned to an orgnization to have access")
     else:
-        return render_template('landing.html')
+        return render_template('landing.html', pagetitle="Main Page", config_data=configuration)
 
 # Collections
 @fjm_app.route('/coll')
 def coll():
-    logger.info(request.remote_addr + ' ==> Collections page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+    # Page records to show parameters
+    pagestart = request.args.get('start', default = 1, type = int)
+    if (pagestart < 1):
+        pagestart = 1
+    pagerecords = request.args.get('records', default = g.user['pagerecords'], type = int)
+    pagetotal = 0
+    pagedims = dict({'start': pagestart, 'records': pagerecords, 'total': pagetotal})
+    # End-user filter selections
+    filter_name = request.args.get('name', default = "", type = str)
+    filter_owner = request.args.get('owner', default = 999999999999, type = int)
+    filter_org = request.args.get('org', default = 999999999999, type = int)
+    # Build filter
+    query_filter = dict({})
+    if (filter_name != ""):
+        query_filter['collection_name'] = filter_name
+    if (filter_owner != 999999999999):
+        query_filter['contact_user'] = filter_owner
+    if (filter_org != 999999999999):
+        query_filter['contact_org'] = filter_org
+    # Page
+    if int(session['user_id']) == 999999999999: # User is a guest
+        logger.info(request.remote_addr + ' ==> Collections page for collection ' + filter_name + ' (' + str(g.user['login']) + ')')
+        # Put a delay in for denial-of service attacks
+        # time.sleep(5)
+        return redirect(url_for('loginpage', requestingurl=request.full_path))
+    if g.user['admin'] == False and int(g.org['_index']) == 999999999999: # User is not admin or in an org
+        logger.info(request.remote_addr + ' ==> Collections page org error for collection ' + filter_name + '(' + str(g.user['login']) + ')')
+        return render_template('collection.html', pagetitle="Please have your admin assign you to your organization", org_records=orgs, user_records=users, pagedims=pagedims)
+    else: # User is valid and in an organization
+        page_title = "Collection: " + filter_name
+        logger.info(request.remote_addr + ' ==> Collection records page for collection ' + filter_name + ' (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     # Place holder page
-    return render_template('placeholder.html')
+    return render_template('collection.html', pagetitle=page_title, config_data=configuration)
 
 # Logs page
 @fjm_app.route('/status')
@@ -219,7 +249,7 @@ def status():
         print('Problem opening ' + log_file + ', check to make sure your log file location is valid.')
         log_data = "Unable to read log file " + log_file
     logger.info(request.remote_addr + ' ==> Status page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
-    return render_template('status.html', running_python=running_python, running_host=running_host, running_os=running_os, running_hardware=running_hardware, config_data=configuration, log_data=log_data)
+    return render_template('status.html', pagetitle="Status", running_python=running_python, running_host=running_host, running_os=running_os, running_hardware=running_hardware, config_data=configuration, log_data=log_data)
 
 # Login page
 @fjm_app.route('/login', methods=['GET', 'POST'])
@@ -496,7 +526,7 @@ def loginpassword():
 def darkmode():
     logger.info(request.remote_addr + ' ==> Darkmode change (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     # Place holder page
-    return render_template('placeholder.html')
+    return render_template('placeholder.html', pagetitle="Flask / Jinja2 / MongoDB")
 
 # Run in debug mode if started from CLI (http://localhost:5000)
 if __name__ == '__main__':
