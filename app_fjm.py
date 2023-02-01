@@ -185,7 +185,14 @@ def landing():
         return render_template('landing.html', pagetitle="You must be assigned to an orgnization to have access")
     else:
         return render_template('landing.html')
-            
+
+# Collections
+@fjm_app.route('/coll')
+def coll():
+    logger.info(request.remote_addr + ' ==> Collections page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+    # Place holder page
+    return render_template('placeholder.html')
+
 # Logs page
 @fjm_app.route('/status')
 def status():

@@ -52,6 +52,16 @@
         <!-- Footer -->
         <div class="foot">
 
+                <div class="formarea">
+                    <br>
+                    {% if g.user.login != 'guest' %}
+                    <a href="/loginpassword">Password</a><br><br>
+                    <a href="/logout">Logout</a><br><br>
+                    {% else %}
+                    <a href="/login">Login</a><br><br>
+                    {% endif %}
+                </div>
+            
             <h3>Contact {{ g.team }} for questions at <a href="mailto: {{ g.email }}">Support</a> {% if g.user['admin'] == True %}(<a href="/status">Status and Logs</a>){% endif %}</h3>
 
         </div>
