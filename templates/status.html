@@ -24,21 +24,20 @@
     <div class="log">
 
         <h4>Here is what is in the configuration file:</h4>
-        <pre>Email: {{ config_data['email'] }}</pre>
-        <pre>SMTP: {{ config_data['smtp'] }}</pre>
-        <pre>Log Settings:</pre>
-        <pre>        Size: {{ config_data['logfilesize'][0] }}</pre>
-        <pre>    Archives: {{ config_data['logfilesize'][1] }}</pre>
-        <pre>Logo: {{ config_data['logo'] }}</pre>
-        <pre>Logo Size:</pre>
-        <pre>    Width: {{ config_data['logosize'][0] }}</pre>
-        <pre>   Height: {{ config_data['logosize'][1] }}</pre>
-        <pre>Team: {{ config_data['team'] }}</pre>
-        <pre>Database Settings:</pre>
-        <pre>   Server: {{ config_data['db_conn'][3] }}</pre>
-        <pre> Database: {{ config_data['db_conn'][4] }}</pre>
-        <pre>     Type: {{ config_data['db_conn'][0] }}</pre>
-        <pre>  Account: {{ config_data['db_conn'][1] }}</pre>
+        <pre>               Email: {{ config_data['email'] }}</pre>
+        <pre>                SMTP: {{ config_data['smtp'] }}</pre>
+        <pre>        Log Settings:</pre>
+        <pre>                Size: {{ config_data['logfilesize'][0] }}</pre>
+        <pre>            Archives: {{ config_data['logfilesize'][1] }}</pre>
+        <pre>                Logo: {{ config_data['logo'] }}</pre>
+        <pre>           Logo Size:</pre>
+        <pre>               Width: {{ config_data['logosize'][0] }}</pre>
+        <pre>              Height: {{ config_data['logosize'][1] }}</pre>
+        <pre>                Team: {{ config_data['team'] }}</pre>
+        <pre>      DB Collections:</pre>
+        {% for collection in config_data['db_coll'] %}
+        <pre>                      {{ collection }}</pre>
+        {% endfor %}
     
     </div>
     

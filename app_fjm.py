@@ -62,11 +62,14 @@ else: # Config settings out to the log
     logger.info('   Team is set to: ' + configuration['team'])
     logger.info('   Logo is set to: ' + configuration['logo'])
     logger.info(' Logo size is set: ' + str(configuration['logosize'][0]) + ', ' + str(configuration['logosize'][1]))
+    logger.info('   DB collections: ')
+    for collection in configuration['db_coll']:
+        logger.info('                   ' + collection)
 
 # Orgs write out to log
 if len(orgs) > 1:
     print ("Organization records read")
-    logger.info('      Orgs found: ')
+    logger.info('       Orgs found: ')
     for org_record in orgs:
         # Write organization to the log
         logger.info('                   ' + org_record['name'])
