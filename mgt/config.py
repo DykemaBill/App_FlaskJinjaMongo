@@ -1,7 +1,7 @@
 # Import libraries
 import sys, json, time
 import logging, logging.handlers
-import mgt.encryptpass as encryptpass
+from mgt.encryptpass import *
 
 # Read configuration
 def read_cfg(config_file):
@@ -74,7 +74,7 @@ def read_cfg(config_file):
             # Read DB encrypted password
             db_conn_pass_encrypted = cfg_data['db_conn'][2]
             # Decrypt DB byte to plain text password
-            db_conn_pass = encryptpass.passdecrypt(decryption_key, db_conn_pass_encrypted)
+            db_conn_pass = passdecrypt(decryption_key, db_conn_pass_encrypted)
             # Read DB host name
             db_conn_host = cfg_data['db_conn'][3]
             # Read DB name

@@ -5,9 +5,9 @@
 from flask import Flask, g, render_template, request, session, redirect, url_for
 from datetime import timedelta, datetime
 import bcrypt, re, os, sys, platform
-import mgt.emailalert as emailalert
-import mgt.config as config
-import mgt.passmanage as passmanage
+from mgt.config import *
+from mgt.passmanage import *
+from mgt.emailalert import *
 
 # Configuration files
 config_folder = "config"
@@ -25,25 +25,25 @@ log_file = os.path.join(log_folder, log_name + ".log")
 configuration = dict({})
 def config_load():
     global configuration
-    configuration = config.read_cfg(config_file)
+    configuration = read_cfg(config_file)
 config_load()
 
 # Read users
 users = list([])
 def users_load():
     global users
-    users = config.read_users(users_file)
+    users = read_users(users_file)
 users_load()
 
 # Read organizations
 orgs = list([])
 def orgs_load():
     global orgs
-    orgs = config.read_orgs(orgs_file)
+    orgs = read_orgs(orgs_file)
 orgs_load()
 
 # Setup logging
-logger = config.setup_log(log_file, configuration['logfilesize'][0], configuration['logfilesize'][1])
+logger = setup_log(log_file, configuration['logfilesize'][0], configuration['logfilesize'][1])
 
 # Starting up
 logger.info('****====****====****====****====****====**** App Starting ****====****====****====****====****====****')
@@ -245,7 +245,7 @@ def loginpage():
             # Convert the previously used salt to a byte
             password_stored_salt = password_stored_salt_decoded.encode("utf-8")
             # Hash the entered password with previously used salt
-            password_entered = passmanage.passhash(user_request_pass, password_stored_salt)
+            password_entered = passhash(user_request_pass, password_stored_salt)
             # Correct password
             if password_entered == password_stored:
                 # Check to make sure user is approved
@@ -338,7 +338,7 @@ def loginnewpage():
             # Generate a one-time salt for this password in byte format
             pass_salt = bcrypt.gensalt()
             # Hash password
-            user_pass_hash = passmanage.passhash(user_request_pass, pass_salt)
+            user_pass_hash = passhash(user_request_pass, pass_salt)
 
             # Write the new user for the users file
             dataupdate_newuser = {
@@ -358,12 +358,12 @@ def loginnewpage():
             }
 
             # Create backup of users file
-            backup_users_attempt = config.backup_users(users_file)
+            backup_users_attempt = backup_users(users_file)
             if backup_users_attempt == False:
                 logger.info(request.remote_addr + ' ==> Problem creating backup of ' + users_file + ', check to make sure your filesystem is not write protected.')
 
             # Add new user
-            new_user_attempt = config.new_user(users_file, dataupdate_newuser)
+            new_user_attempt = new_user(users_file, dataupdate_newuser)
             if new_user_attempt == False:
                 logger.info(request.remote_addr + ' ==> Problem adding new user ' + dataupdate_newuser['login'] + ', check to make sure your filesystem is not write protected.')
             else:
@@ -423,11 +423,11 @@ def loginpassword():
             # Convert the stored salt to a byte
             password_salt = password_salt_encoded.encode("utf-8")
             # Hash the old password entered with the salt
-            password_old_entered = passmanage.passhash(user_request_passold, password_salt)
+            password_old_entered = passhash(user_request_passold, password_salt)
             # Correct old password
             if password_old_entered == g.user['password']:
                 # Change password to new one
-                g.user['password'] = passmanage.passhash(user_request_passnew, password_salt)
+                g.user['password'] = passhash(user_request_passnew, password_salt)
                 
                 # Write the login information for the config file
                 dataupdate_userchanged = {
@@ -447,12 +447,12 @@ def loginpassword():
                 }
 
                 # Create backup of users file
-                backup_users_attempt = config.backup_users(users_file)
+                backup_users_attempt = backup_users(users_file)
                 if backup_users_attempt == False:
                     logger.info(request.remote_addr + ' ==> Problem creating backup of ' + users_file + ', check to make sure your filesystem is not write protected.')
 
                 # Replace updated login
-                mod_user_attempt = config.modify_user(users_file, dataupdate_userchanged)
+                mod_user_attempt = modify_user(users_file, dataupdate_userchanged)
                 if mod_user_attempt == False:
                     logger.info(request.remote_addr + ' ==> Problem modifying password for user ' + dataupdate_userchanged['login'] + ', check to make sure your filesystem is not write protected.')
                 else:
