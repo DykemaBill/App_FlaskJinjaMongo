@@ -10,4 +10,4 @@ Application build with Python Flask/Jinja2 and MongoDB
 - Password hash not working - FIXED
 
 # Future ideas
-- None yet
+- CSS class renames and remove unused

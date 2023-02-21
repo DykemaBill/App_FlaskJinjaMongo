@@ -123,7 +123,7 @@ def backup_users(users_file):
     datetime = time.strftime("%Y-%m-%d_%H%M%S")
     try:
         with open(users_file + '_' + datetime + '_old.cfg', 'w') as users_contents:
-            json.dump(users, users_contents, indent=4)
+            json.dump({'users': users}, users_contents, indent=4)
         return True
     except IOError:
         print('Problem creating ' + users_file + '_' + datetime + ', check to make sure your filesystem is not write protected.')

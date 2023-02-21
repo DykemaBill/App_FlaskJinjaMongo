@@ -521,10 +521,58 @@ def loginpassword():
             logger.info(request.remote_addr + ' ==> Login password change page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
             return render_template('loginpassword.html', pagetitle="Change your password")
 
-# Darkmode setting
+# User darkmode settings
 @fjm_app.route('/darkmode')
-def darkmode():
-    logger.info(request.remote_addr + ' ==> Darkmode change (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+def darkmodepage():
+    if int(session['user_id']) == 999999999999: # User is a guest
+        return redirect(url_for('loginpage', requestingurl=request.full_path))
+    else:
+        # Toggle darkmode setting
+        if g.user['darkmode']:
+            g.user['darkmode'] = False
+        else:
+            g.user['darkmode'] = True
+
+        # Write the login information for the config file
+        dataupdate_userchanged = {
+            "_index": g.user['_index'],
+            "approved": g.user['approved'],
+            "admin": g.user['admin'],
+            "login": g.user['login'],
+            "password": g.user['password'],
+            "namelast": g.user['namelast'],
+            "namefirst": g.user['namefirst'],
+            "email": g.user['email'],
+            "alert": g.user['alert'],
+            "org": g.user['org'],
+            "orgadmin": g.user['orgadmin'],
+            "pagerecords": g.user['pagerecords'],
+            "darkmode": g.user['darkmode']
+        }
+
+        # Create backup of users file
+        backup_users_attempt = backup_users(users_file)
+        if backup_users_attempt == False:
+            logger.info(request.remote_addr + ' ==> Problem creating backup of ' + users_file + ', check to make sure your filesystem is not write protected.')
+
+        # Replace updated login
+        mod_user_attempt = modify_user(users_file, dataupdate_userchanged)
+        if mod_user_attempt == False:
+            logger.info(request.remote_addr + ' ==> Problem modifying password for user ' + dataupdate_userchanged['login'] + ', check to make sure your filesystem is not write protected.')
+        else:
+            # Write user info to log without encoded password
+            logger.info(request.remote_addr + ' ==> Darkmode setting changed (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+
+        # Return to page where darkmode change request came from
+        forwardurl = "/" # Default to main page
+        if 'requestingurl' in request.args: # Pass from URL if supplied
+            forwardurl = request.args['requestingurl']
+        return redirect(forwardurl)
+
+# Place holder
+@fjm_app.route('/notused')
+def placeholderpage():
+    logger.info(request.remote_addr + ' ==> Place holder page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     # Place holder page
     return render_template('placeholder.html', pagetitle="Flask / Jinja2 / MongoDB")
 

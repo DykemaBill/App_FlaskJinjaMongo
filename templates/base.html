@@ -15,9 +15,8 @@
     <link rel="shortcut icon" media="all" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
-    <!-- DataTenant copyright 2022 -->
+    <!-- DataTenant copyright 2023 -->
     <script src="{{ url_for('static', filename='browsercheck.js') }}"></script>
-    <script src="{{ url_for('static', filename='darkmode.js') }}"></script>
 
     <div class="wrapper">
 
@@ -26,7 +25,7 @@
 
             <!-- Dark mode icon -->
             <span class="darkmode-icon">
-                <a href="darkmode">
+                <a href="/darkmode?requestingurl={{request.path}}">
                     <button class="requestsummary create" tabindex="-1">&#9770;</button>
                 </a>
             </span>
