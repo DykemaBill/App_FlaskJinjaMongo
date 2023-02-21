@@ -12,7 +12,7 @@
             <div class="buttonarea">
 
                 {% for collection in config_data['db_coll'] %}
-                <a href="/coll?name={{ collection }}" tabindex="1">
+                <a href="/coll?data={{ collection }}" tabindex="1">
                     <button class="datalarge save">{{ collection }}</button>
                 </a>
                 {% endfor %}

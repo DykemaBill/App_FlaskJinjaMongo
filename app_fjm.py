@@ -179,35 +179,38 @@ def before_request():
 
 # Endpoint root
 @fjm_app.route('/')
-def landing():
+def landingpage():
     logger.info(request.remote_addr + ' ==> Landing page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     if int(g.org['_index']) == 999999999999: # User is not assigned to an organization
         return render_template('landing.html', pagetitle="You must be assigned to an orgnization to have access")
     else:
         return render_template('landing.html', pagetitle="Main Page", config_data=configuration)
 
-# Collections
+# Collection page listing records
 @fjm_app.route('/coll')
-def coll():
+def collpage():
     # Page records to show parameters
-    pagestart = request.args.get('start', default = 1, type = int)
-    if (pagestart < 1):
-        pagestart = 1
-    pagerecords = request.args.get('records', default = g.user['pagerecords'], type = int)
-    pagetotal = 0
-    pagedims = dict({'start': pagestart, 'records': pagerecords, 'total': pagetotal})
+    page_start = request.args.get('start', default = 1, type = int)
+    if (page_start < 1):
+        page_start = 1
+    page_records = request.args.get('records', default = g.user['pagerecords'], type = int)
+    page_total = 0
+    page_dims = dict({'start': page_start, 'records': page_records, 'total': page_total})
     # End-user filter selections
+    filter_number = request.args.get('num', default = 999999999999, type = int)
     filter_name = request.args.get('name', default = "", type = str)
     filter_owner = request.args.get('owner', default = 999999999999, type = int)
     filter_org = request.args.get('org', default = 999999999999, type = int)
     # Build filter
     query_filter = dict({})
+    if (filter_number != 999999999999):
+        query_filter['record_number'] = filter_number
     if (filter_name != ""):
-        query_filter['collection_name'] = filter_name
+        query_filter['record_name'] = filter_name
     if (filter_owner != 999999999999):
-        query_filter['contact_user'] = filter_owner
+        query_filter['record_user'] = filter_owner
     if (filter_org != 999999999999):
-        query_filter['contact_org'] = filter_org
+        query_filter['record_org'] = filter_org
     # Page
     if int(session['user_id']) == 999999999999: # User is a guest
         logger.info(request.remote_addr + ' ==> Collections page for collection ' + filter_name + ' (' + str(g.user['login']) + ')')
@@ -218,14 +221,18 @@ def coll():
         logger.info(request.remote_addr + ' ==> Collections page org error for collection ' + filter_name + '(' + str(g.user['login']) + ')')
         return render_template('collection.html', pagetitle="Please have your admin assign you to your organization", org_records=orgs, user_records=users, pagedims=pagedims)
     else: # User is valid and in an organization
-        page_title = "Collection: " + filter_name
+        # Collection to use
+        filter_data = request.args.get('data', default = "", type = str)
+        page_title = "Collection: " + filter_data
+        # WILL READ THE COLLECTION HERE
+        collection_data = []
         logger.info(request.remote_addr + ' ==> Collection records page for collection ' + filter_name + ' (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     # Place holder page
-    return render_template('collection.html', pagetitle=page_title, config_data=configuration)
+    return render_template('collection.html', pagetitle=page_title, collectiondata=collection_data, pagedims=page_dims, user_records=users, org_records=orgs)
 
 # Logs page
 @fjm_app.route('/status')
-def status():
+def statuspage():
     if int(session['user_id']) == 999999999999: # User is a guest
         # Put a delay in to slow denial-of-service attacks
         # time.sleep(5)
@@ -443,7 +450,7 @@ def loginnewpage():
 
 # Login password change
 @fjm_app.route('/loginpassword', methods=['GET', 'POST'])
-def loginpassword():
+def loginpasswordpage():
     if int(session['user_id']) == 999999999999: # User is a guest
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     else:
@@ -523,7 +530,7 @@ def loginpassword():
 
 # User darkmode settings
 @fjm_app.route('/darkmode')
-def darkmodepage():
+def darkmodeset():
     if int(session['user_id']) == 999999999999: # User is a guest
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     else:
