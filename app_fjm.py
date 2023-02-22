@@ -240,7 +240,7 @@ def statuspage():
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     elif int(g.org['_index']) == 999999999999: # User is not assigned to an organization
         logger.info(request.remote_addr + ' ==> Status page denied for no organization (' + str(g.user['login']) + ')')
-        return redirect(url_for('landing'))
+        return redirect(url_for('landingpage'))
     if g.user['admin'] == False: # User is not an admin
         # Show server status page access error
         logger.info(request.remote_addr + ' ==> Status page denied for none admin (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
@@ -308,7 +308,7 @@ def loginpage():
                     if len(user_returnto) > 0: # Check to see what page URL was looking for
                         return redirect(user_returnto) # Go to calling page for login
                     else:
-                        return redirect(url_for('landing')) # No calling page for login
+                        return redirect(url_for('landingpage')) # No calling page for login
             else: # Incorrect password
                 logger.info(request.remote_addr + ' ==> Login failed, bad password (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
                 return render_template('login.html', pagetitle="Incorrect password, try again")
@@ -519,7 +519,7 @@ def loginpasswordpage():
                     logger.info(request.remote_addr + ' ==> Modified user: ' + str(dataupdate_login_log))
 
                 # Redirect sucessfully changed to main page
-                return redirect(url_for('landing'))
+                return redirect(url_for('landingpage'))
             else: # Incorrect password
                 logger.info(request.remote_addr + ' ==> Old password for ' + str(g.user['login']) + ' - ' + str(g.org['name']) + ' not correct')
                 return render_template('loginpassword.html', pagetitle="Old password not correct")

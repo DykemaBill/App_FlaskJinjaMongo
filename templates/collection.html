@@ -67,7 +67,7 @@
             {% else %}
             {% set org_selected = "Org (" ~ org_records[filter_org|int()]['name'] ~ ")" %}
             {% endif %}
-            <select class="requestsummary new cltorgfield" name="client_org_filter" style="width:160px" onchange="filterChange(this)">
+            <select class="requestsummary new" name="record_org_filter" style="width:160px" onchange="filterChange(this)">
                 <option value="">{{org_selected}}</option>
                 <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}">All</option>
                 {% for org_record in org_records %}
@@ -80,6 +80,91 @@
 
             </form>
         
+            {% if (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
+
+                {% for recorddata in collectiondata %}
+
+                    <div class="recordsarea">
+
+                        <!-- Check to see if record owned by user -->
+                        {% if recorddata['user']|int() == g.user['_index'] or (g.user['admin'] == True) or ((g.user['orgadmin'] == True) and (g.user['org']|int() == recorddata['org']|int())) %}
+                            {% set recorddata_color = "prod" %}
+                            {% set recorddata_owner = true %}
+                        {% else %}
+                            {% set recorddata_color = "new" %}
+                            {% set recorddata_owner = false %}
+                        {% endif %}
+
+                        <br>
+
+                        <!-- Record Count -->
+                        <input type="text"
+                        class="requestsummary new"
+                        name="record_count" value="{{ '%03d' % (start + loop.index - 1) }}" size="3" readonly tabindex="-1">
+                        
+                        <!-- Record Number -->
+                        <input type="text"
+                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }} "{% endif %}
+                        name="recorddata_number" value="{{ recorddata['number']|int() }}" size="16" readonly>
+
+                        <!-- Record Name -->
+                        <input type="text"
+                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
+                        name="recorddata_name" value="{{ recorddata['name'] }}" size="24" readonly>
+
+                        <!-- Record User Owner -->
+                        {% set user_index = recorddata['user']|int() %}
+                        {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
+                            {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
+                        {% else %}
+                            {% set user_name = "No user" %}
+                        {% endif %}
+                        <input type="text"
+                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
+                        name="recorddata_user" value="{{ recorddata_name }}" size="20" readonly>
+
+                        {% if g.user['admin'] == True %}
+                        <!-- Record Org Owner -->
+                        {% set org_index = recorddata['org']|int() %}
+                        {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
+                            {% set org_name = org_records[org_index]['name'] %}
+                        {% else %}
+                            {% set org_name = "No organization" %}
+                        {% endif %}
+                        <input type="text"
+                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
+                        name="recorddata_org" value="{{ org_name }}" size="20" readonly>
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+            <div class="recordsarea"><br>
+                {% if startprev != start %}
+                <a href="{{request.path}}?start={{ '%03d' % startprev }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
+                    <button class="requestsummary save">&#8678;</button></a>
+                {% else %}
+                    <button class="requestsummary saved" tabindex="-1">&#8678;</button>
+                {% endif %}
+                {{ '%03d' % start }} &#8722;&#8722; {{ '%03d' % end }}
+                {% if startnext != start %}
+                <a href="{{request.path}}?start={{ '%03d' % startnext }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
+                    <button class="requestsummary save">&#8680;</button></a>
+                {% else %}
+                    <button class="requestsummary saved" tabindex="-1">&#8680;</button>
+                {% endif %}
+                ({{ '%03d' % total }})
+            </div>
+
+            {% else %}
+
+            <div class="recordsarea">
+                <br>No access to records<br><br>You might need to be assigned to an organization.
+            </div>
+            
+            {% endif %}
+
         </div>
 
 {% endblock %}
