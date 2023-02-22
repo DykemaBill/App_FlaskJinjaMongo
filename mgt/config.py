@@ -91,7 +91,7 @@ def read_cfg(config_file):
             # Configuration values
             config_error = False
             config_values = dict({'error': config_error, 'email': support_email, 'smtp': smtp_server, 'logfilesize': logfilesize,
-             'logo': web_logo, 'logosize':  web_logosize, 'team': support_team, 'db_conn': db_connection, 'db_coll': db_collections})
+             'logo': web_logo, 'logosize':  web_logosize, 'team': support_team, 'dbconn': db_connection, 'dbcoll': db_collections})
 
     except IOError as file_error:
         print('Problem opening ' + config_file + ', error received is: ' + str(file_error))

@@ -3,6 +3,7 @@
 
 # Import libraries
 from flask import Flask, g, render_template, request, session, redirect, url_for
+from flask_pymongo import PyMongo # Needed for all MongoDB operations except deleting files
 from datetime import timedelta, datetime
 import bcrypt, re, os, sys, platform
 from mgt.config import *
@@ -63,7 +64,7 @@ else: # Config settings out to the log
     logger.info('   Logo is set to: ' + configuration['logo'])
     logger.info(' Logo size is set: ' + str(configuration['logosize'][0]) + ', ' + str(configuration['logosize'][1]))
     logger.info('   DB collections: ')
-    for collection in configuration['db_coll']:
+    for collection in configuration['dbcoll']:
         logger.info('                   ' + collection)
 
 # Orgs write out to log
@@ -106,6 +107,12 @@ fjm_app.permanent_session_lifetime = timedelta(hours=1)
 # File upload settings
 fjm_app.config['MAX_CONTENT_PATH'] = 50000000 # 50000000 equals 50MB
 
+# MongoDB object, db_conn_type of mongodb for non-Atlas hosted
+if configuration['error'] == False:
+    db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
+else:
+    print('Database not connected because of problem opening ' + config_file + '.')
+
 # Existing user session
 def session_existing():
     # Find the session user ID
@@ -143,7 +150,7 @@ def session_new():
 
 # Setup user session from browser or API
 def session_setup():
-    # Set the session to be saved by client in browser or API client if it is capturing the session
+    # Set the session to be saved by end-user browser or API if it is capturing the session
     session.permanent = True
     # Reload all configuration files to capture any changes made
     config_load()
@@ -186,9 +193,9 @@ def landingpage():
     else:
         return render_template('landing.html', pagetitle="Main Page", config_data=configuration)
 
-# Collection page listing records
-@fjm_app.route('/coll')
-def collpage():
+# Collections page listing records
+@fjm_app.route('/colls')
+def collspage():
     # Page records to show parameters
     page_start = request.args.get('start', default = 1, type = int)
     if (page_start < 1):
@@ -213,22 +220,214 @@ def collpage():
         query_filter['record_org'] = filter_org
     # Page
     if int(session['user_id']) == 999999999999: # User is a guest
-        logger.info(request.remote_addr + ' ==> Collections page for collection ' + filter_name + ' (' + str(g.user['login']) + ')')
+        logger.info(request.remote_addr + ' ==> Collections listing page access error (' + str(g.user['login']) + ')')
         # Put a delay in for denial-of service attacks
         # time.sleep(5)
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     if g.user['admin'] == False and int(g.org['_index']) == 999999999999: # User is not admin or in an org
         logger.info(request.remote_addr + ' ==> Collections page org error for collection ' + filter_name + '(' + str(g.user['login']) + ')')
-        return render_template('collection.html', pagetitle="Please have your admin assign you to your organization", org_records=orgs, user_records=users, pagedims=pagedims)
+        return render_template('collections.html', pagetitle="Please have your admin assign you to your organization", org_records=orgs, user_records=users, pagedims=page_dims)
     else: # User is valid and in an organization
-        # Collection to use
-        filter_data = request.args.get('data', default = "", type = str)
-        page_title = "Collection: " + filter_data
-        # WILL READ THE COLLECTION HERE
-        collection_data = []
-        logger.info(request.remote_addr + ' ==> Collection records page for collection ' + filter_name + ' (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
-    # Place holder page
-    return render_template('collection.html', pagetitle=page_title, collectiondata=collection_data, pagedims=page_dims, user_records=users, org_records=orgs)
+        # Collection name argument passed
+        data_coll = request.args.get('data', default = "", type = str)
+        if (data_coll != ""):
+            logger.info(request.remote_addr + ' ==> Collection name not passed (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+            page_title = "You must pass a collection name"
+            # Show page error
+            return render_template('collections.html', pagetitle=page_title, pagedims=page_dims)
+        # Setup sort
+        record_sort = tuple([('record_name', 1)])
+        # Create list to collect records
+        record_list = []
+        # Read all records
+        logger.info(request.remote_addr + ' ==> Record listing page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+        try: # Get the list of records
+            if int(filter_number) == 999999999999: # Find all records visible to this user
+                if (g.user['admin'] == True): # User is admin, get all records
+                    query_run = query_filter
+                else: # User is org admin or user, in the page non-org admins will not see links for records they do not own
+                    # Override user and organization filter to just the user
+                    query_filter['record_org'] = int(g.org['_index'])
+                    query_run = query_filter
+                # Record count
+                page_total = int(db_inst.db[data_coll].count_documents(query_run))
+                if (page_start >= page_total):
+                    page_start = page_total
+                # Query
+                record_list = list(db_inst.db[data_coll].find(query_run).sort(record_sort).skip(page_start-1).limit(page_records))
+            else: # Find just the record requested
+                record_number = filter_number
+                page_total = 1
+                page_start = 1
+                page_title = "Record filtered"
+                if (g.user['admin'] == True): # User is admin, get the record no matter who it is tied to
+                    record_list.append(dict(db_inst.db[data_coll].find_one({'record_number': int(record_number)})))
+                elif (g.user['orgadmin'] == True): # User is org admin, get the record if tied to the user's org
+                    record_list.append(dict(db_inst.db[data_coll].find_one({'record_number': int(record_number), 'record_org': int(g.org['_index'])})))
+                else: # Get record if it is owned by the user
+                    record_list.append(dict(db_inst.db[data_coll].find_one({'record_number': int(record_number), 'record_user': int(g.user['_index'])})))
+        except: # Error if failed
+            logger.info(request.remote_addr + ' ==> Database error reading records (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+            page_title = "No access to record or it does not exist"
+        # Update total number of records and start based on the query
+        page_dims['total'] = page_total
+        page_dims['start'] = page_start
+        if len(record_list) > 0: # Render page with records
+            return render_template('collections.html', pagetitle=page_title, recordlist=record_list, org_records=orgs, user_records=users, pagedims=page_dims)
+        else: # Render page without records
+            page_title = "No Records"
+            return render_template('collections.html', pagetitle=page_title, org_records=orgs, user_records=users, pagedims=page_dims)
+
+# Collection page listing fields from one record
+@fjm_app.route('/coll', methods=['GET', 'POST'])
+def collpage():
+    # Page record parameters
+    # End-user filter selections
+    filter_number = request.args.get('num', default = 999999999999, type = int)
+    # Build filter
+    query_filter = dict({})
+    if (filter_number != 999999999999):
+        query_filter['record_number'] = filter_number
+    # Page
+    if int(session['user_id']) == 999999999999: # User is a guest
+        logger.info(request.remote_addr + ' ==> Collection page access error for ' + filter_number + ' (' + str(g.user['login']) + ')')
+        # Prompt to login
+        return redirect(url_for('loginpage', requestingurl=request.full_path))
+    if g.user['admin'] == False and int(g.org['_index']) == 999999999999: # User is not admin or in an org
+        logger.info(request.remote_addr + ' ==> Collection page access error for ' + filter_number + ' (' + str(g.user['login']) + ')')
+        page_title = "You must be in an organization to see records"
+        # Show page error
+        return render_template('collection.html', pagetitle=page_title)
+    else:
+        # Collection name argument passed
+        data_coll = request.args.get('data', default = "", type = str)
+        if (data_coll != ""):
+            logger.info(request.remote_addr + ' ==> Collection name not passed (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+            page_title = "You must pass a collection name"
+            # Show page error
+            return render_template('collection.html', pagetitle=page_title)
+        if request.method == 'POST':
+            # Current time
+            nowIs = datetime.now().strftime("_%Y%m%d-%H%M%S%f")
+            # Process new record after form is filled out and a POST request happens
+            record_new = True
+            record_user = 999999999999
+            record_org = 999999999999
+            try: # Existing record
+                record_number = int(request.form['record_number'])
+                record_new = False
+                record_user = int(request.form['record_user'])
+                record_org = int(request.form['record_org'])
+            except: # New record
+                record_number = int(datetime.now().strftime("%Y%m%d%H%M%S") + str(session['user_id']).zfill(4))
+                record_new = True
+                record_user = int(g.user['_index'])
+                record_org = int(g.org['_index'])
+            # Get remaining record fields
+            try:
+                record_name = request.form['record_name']
+            except:
+                record_name = "Name error"
+
+            record_message = ""
+
+            record_file_version = "None"
+            if 'record_file' in request.files:
+                # File object
+                record_file = request.files['record_file']
+                if record_file:
+                    # Name to use to reference the file with time in to avoid duplicates
+                    record_file_name, record_file_extension = os.path.splitext(record_file.filename)
+                    record_file_clean = re.sub('[^A-Za-z0-9]+', '', record_file_name)
+                    if (record_file_clean == ""):
+                        record_file_clean = "Doc"
+                    record_file_version = record_file_clean + nowIs + record_file_extension
+                    document_number = int(datetime.now().strftime("%Y%m%d%H%M%S") + str(session['user_id']).zfill(4))
+                    try:
+                        # Write file object to database
+                        db_inst.save_file(record_file_version, record_file)
+                        record_message = "Document added"
+                        # Create new document record
+                        db_inst.db[data_coll].insert_one({'document_number': document_number, 'document_record': record_number, 'document_file': record_file_version, 'document_name': record_file.filename})
+                        logger.info(request.remote_addr + ' ==> Document ' + str(document_number) + ' stored (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                        record_message = "Document stored"
+                    except:
+                        logger.info(request.remote_addr + ' ==> Database error adding document (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                        record_message = "Document not added, database error"
+            document_records = []
+            try: # Read document record
+                document_records = list(db_inst.db[data_coll].find({'document_record': int(record_number) }))
+            except: # Error if failed
+                logger.info(request.remote_addr + ' ==> Database error reading document record for confirmation page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                document_records.append({'document_number': 999999999999, 'document_record': 999999999999, 'document_file': "None"})
+                page_title = "Database error reading document record"
+
+            # Write new record info to log
+            new_record_details = {
+                "record_number": record_number,
+                "record_name": record_name,
+                "record_user": record_user,
+                "record_org": record_org
+            }
+
+            if record_new:
+                try:
+                    # Create new record in database collection
+                    db_inst.db[data_coll].insert_one({'record_number': int(record_number), 'record_name': record_name, 'record_user': int(record_user), 'record_org': int(record_org)})
+                    record_message = "Record added"
+                    logger.info(request.remote_addr + ' ==> New record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(new_record_details))
+                except:
+                    logger.info(request.remote_addr + ' ==> Database error adding new record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                    record_message = "Record not added, database error"
+            else:
+                if g.user['admin'] == True or int(g.user['_index']) == record_user or (int(g.user['org']) == record_org and g.user['orgadmin'] == True): # User is admin, record owner, or record org admin
+                    try:
+                        # Modify existing record details in database collection
+                        db_inst.db[data_coll].replace_one({'record_number': int(record_number) },{'record_number': int(record_number), 'record_name': record_name, 'record_user': int(record_user), 'record_org': int(record_org)})
+                        record_message = "Record modified"
+                        logger.info(request.remote_addr + ' ==> Modified record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(new_record_details))
+                    except:
+                        logger.info(request.remote_addr + ' ==> Database error modifying record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                        record_message = "Record not modified, database error"
+                else:
+                    logger.info(request.remote_addr + ' ==> Denied access to modify record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                    record_message = "Record not modified error"
+                    new_record_details = ({'record_number': 999999999999, 'record_name': "Blocked...", 'record_user': 999999999999, 'record_org': 999999999999})
+                    document_records.append({'document_number': 999999999999, 'document_record': 999999999999, 'document_file': "Blocked..."})
+
+            # Confirm new record
+            return render_template('collect.html', pagetitle=record_message, recorddetails=new_record_details, recorddocuments=document_records, org_records=orgs, user_records=users)
+
+        else: # GET request
+            # Show individual record page
+            page_title = "Record"
+            if int(filter_number) == 999999999999: # New record
+                logger.info(request.remote_addr + ' ==> New record page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                return render_template('collection.html', pagetitle="Create a new record", org_records=orgs, user_records=users)
+            else: # Existing record
+                record_number = filter_number
+                new_record = {}
+                try: # Read record
+                    new_record = dict(db_inst.db[data_coll].find_one({'record_number': int(record_number) }))
+                except: # Error if failed
+                    logger.info(request.remote_addr + ' ==> Database error reading record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                    new_record = ({'record_number': 999999999999, 'record_name': "Name error", 'record_user': 999999999999, 'record_org': 999999999999})
+                    page_title = "Database error reading record"
+                document_records = []
+                if g.user['admin'] == True or int(g.user['_index']) == int(new_record['record_user']) or (int(g.user['org']) == int(new_record['record_org']) and g.user['orgadmin'] == True): # User is admin, record owner, or record org admin
+                    try: # Read document record
+                        document_records = list(db_inst.db[data_coll].find({'document_record': int(record_number) }))
+                    except: # Error if failed
+                        logger.info(request.remote_addr + ' ==> Database error reading document record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                        document_records.append({'document_number': 999999999999, 'document_record': 999999999999, 'document_file': "None"})
+                        page_title = "Database error reading document record"
+                    logger.info(request.remote_addr + ' ==> Existing record page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                else: # Denied access to record
+                    logger.info(request.remote_addr + ' ==> Denied access to record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
+                    new_record = ({'record_number': 999999999999, 'record_name': "Blocked...", 'record_user': 999999999999, 'record_org': 999999999999})
+                    document_records.append({'document_number': 999999999999, 'document_record': 999999999999, 'document_file': "Blocked..."})
+                    page_title = "Record Access Error"
+                return render_template('collection.html', pagetitle=page_title, recordedit=new_record, recorddocuments=document_records, org_records=orgs, user_records=users)
 
 # Logs page
 @fjm_app.route('/status')
