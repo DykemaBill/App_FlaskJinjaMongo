@@ -3,167 +3,180 @@
 
         <div class="main">
             
-            {% set start = pagedims['start']|int() %}
-            {% if start < 1 %}{% set start = 1 %}{% endif %}
-            {% set records = pagedims['records']|int() %}
-            {% set end = start + records - 1 %}
-            {% set total = pagedims['total']|int() %}
-            {% if end > total %}{% set end = total %}{% endif %}
-            {% set startprev = start - pagedims['records']|int() %}
-            {% if startprev < 1 %}{% set startprev = 1 %}{% endif %}
-            {% set startnext = start + pagedims['records']|int() %}
-            {% if startnext > total %}{% set startnext = start %}{% endif %}
+            <div class="buttonarea">
+                <a href="/" tabindex="-1">
+                    <button class="datalarge save">Collections &#9814;</button>
+                </a>
+                <a href="/coll" tabindex="-1">
+                    <button class="datalarge save">New Record &#9814;</button>
+                </a>
+            </div>
 
-            {% set filter_num = request.args.get('num') %}
-            {% set filter_name = request.args.get('name') %}
-            {% set filter_owner = request.args.get('owner') %}
-            {% set filter_org = request.args.get('org') %}
+            <div class="formarea">
 
-            <!-- Form for records to display per page field -->
-            <form id="scriptPosted" action="loginrecordsperpage" method="POST">
+                {% set start = pagedims['start']|int() %}
+                {% if start < 1 %}{% set start = 1 %}{% endif %}
+                {% set records = pagedims['records']|int() %}
+                {% set end = start + records - 1 %}
+                {% set total = pagedims['total']|int() %}
+                {% if end > total %}{% set end = total %}{% endif %}
+                {% set startprev = start - pagedims['records']|int() %}
+                {% if startprev < 1 %}{% set startprev = 1 %}{% endif %}
+                {% set startnext = start + pagedims['records']|int() %}
+                {% if startnext > total %}{% set startnext = start %}{% endif %}
+
+                {% set filter_num = request.args.get('num') %}
+                {% set filter_name = request.args.get('name') %}
+                {% set filter_owner = request.args.get('owner') %}
+                {% set filter_org = request.args.get('org') %}
+
+                <!-- Form for records to display per page field -->
+                <form id="scriptPosted" action="loginrecordsperpage" method="POST">
+                    
+                <!-- Record Count Title -->
+                <input id="scriptInput" type="text" class="requestsummary control" name="user_pagerecords" value="{% if pagedims is defined %}{{ '%03d' % records }}{% endif %}" size="3" onfocus="captureValue()" onblur="submitPost()">
+
+                <!-- Record count change hidden field for return address -->
+                <input type="text" name="user_pagereturn" value="{{request.path}}?start={{ '%03d' % start }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" hidden>
                 
-            <!-- Record Count Title -->
-            <input id="scriptInput" type="text" class="requestsummary control" name="user_pagerecords" value="{% if pagedims is defined %}{{ '%03d' % records }}{% endif %}" size="3" onfocus="captureValue()" onblur="submitPost()">
-
-            <!-- Record count change hidden field for return address -->
-            <input type="text" name="user_pagereturn" value="{{request.path}}?start={{ '%03d' % start }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" hidden>
-            
-            <!-- Record Number Title -->
-            {% if filter_num == None %}
-            {% set num_selected = "" %}
-            {% else %}
-            {% set num_selected = filter_num %}
-            {% endif %}
-            <input type="text" class="requestsummary new" name="record_number_filter" placeholder="# (full number)" value="{{ num_selected }}" size="16" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'num', '{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
-
-            <!-- Record Name Title -->
-            {% if filter_name == None %}
-            {% set name_selected = "" %}
-            {% else %}
-            {% set name_selected = filter_name %}
-            {% endif %}
-            <input type="text" class="requestsummary new" name="record_name_filter" placeholder="Name (type to search)" value="{{ name_selected }}" size="24" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'name', '{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
-
-            <!-- Record User Owner Filter -->
-            {% if filter_owner == None %}
-            {% set owner_selected = "Owner" %}
-            {% else %}
-            {% set owner_selected = "Owner (" ~ user_records[filter_owner|int()]['namelast'] ~ ", " ~ user_records[filter_owner|int()]['namefirst'] ~ ")" %}
-            {% endif %}
-            <select class="requestsummary new" name="record_user_filter" style="width:160px" onchange="filterChange(this)">
-                <option value="">{{owner_selected}}</option>
-                <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">All</option>
-                {% for user_record in user_records %}
-                {% if (user_record['login'] != "_deleted") and ((user_record['org']|int() == g.user['org']|int()) or (user_record['_index'] == g.user['_index'])) %}
-                    <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}&owner={{ user_record['_index']|int() }}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">{{ user_record['namelast'] ~ ", " ~ user_record['namefirst'] }}</option>
-                {% endif %}
-                {% endfor %}
-            </select>
-
-            {% if g.user['admin'] == True %}
-            <!-- Record Organization Owner Filter -->
-            {% if filter_org == None %}
-            {% set org_selected = "Org" %}
-            {% else %}
-            {% set org_selected = "Org (" ~ org_records[filter_org|int()]['name'] ~ ")" %}
-            {% endif %}
-            <select class="requestsummary new" name="record_org_filter" style="width:160px" onchange="filterChange(this)">
-                <option value="">{{org_selected}}</option>
-                <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}">All</option>
-                {% for org_record in org_records %}
-                {% if (org_record['name'] != "_deleted") and (g.user['admin'] == True) %}
-                    <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}&org={{ org_record['_index']|int() }}">{{ org_record['name'] }}</option>
-                {% endif %}
-                {% endfor %}
-            </select>
-            {% endif %}
-
-            </form>
-        
-            {% if (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
-
-                {% for recorddata in recordlist %}
-
-                    <div class="recordsarea">
-
-                        <!-- Check to see if record owned by user -->
-                        {% if recorddata['user']|int() == g.user['_index'] or (g.user['admin'] == True) or ((g.user['orgadmin'] == True) and (g.user['org']|int() == recorddata['org']|int())) %}
-                            {% set recorddata_color = "prod" %}
-                            {% set recorddata_owner = true %}
-                        {% else %}
-                            {% set recorddata_color = "new" %}
-                            {% set recorddata_owner = false %}
-                        {% endif %}
-
-                        <br>
-
-                        <!-- Record Count -->
-                        <input type="text"
-                        class="requestsummary new"
-                        name="record_count" value="{{ '%03d' % (start + loop.index - 1) }}" size="3" readonly tabindex="-1">
-                        
-                        <!-- Record Number -->
-                        <input type="text"
-                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }} "{% endif %}
-                        name="recorddata_number" value="{{ recorddata['number']|int() }}" size="16" readonly>
-
-                        <!-- Record Name -->
-                        <input type="text"
-                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
-                        name="recorddata_name" value="{{ recorddata['name'] }}" size="24" readonly>
-
-                        <!-- Record User Owner -->
-                        {% set user_index = recorddata['user']|int() %}
-                        {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
-                            {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
-                        {% else %}
-                            {% set user_name = "No user" %}
-                        {% endif %}
-                        <input type="text"
-                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
-                        name="recorddata_user" value="{{ recorddata_name }}" size="20" readonly>
-
-                        {% if g.user['admin'] == True %}
-                        <!-- Record Org Owner -->
-                        {% set org_index = recorddata['org']|int() %}
-                        {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
-                            {% set org_name = org_records[org_index]['name'] %}
-                        {% else %}
-                            {% set org_name = "No organization" %}
-                        {% endif %}
-                        <input type="text"
-                        {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
-                        name="recorddata_org" value="{{ org_name }}" size="20" readonly>
-                        {% endif %}
-
-                    </div>
-
-                {% endfor %}
-
-            <div class="recordsarea"><br>
-                {% if startprev != start %}
-                <a href="{{request.path}}?start={{ '%03d' % startprev }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
-                    <button class="requestsummary save">&#8678;</button></a>
+                <!-- Record Number Title -->
+                {% if filter_num == None %}
+                {% set num_selected = "" %}
                 {% else %}
-                    <button class="requestsummary saved" tabindex="-1">&#8678;</button>
+                {% set num_selected = filter_num %}
                 {% endif %}
-                {{ '%03d' % start }} &#8722;&#8722; {{ '%03d' % end }}
-                {% if startnext != start %}
-                <a href="{{request.path}}?start={{ '%03d' % startnext }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
-                    <button class="requestsummary save">&#8680;</button></a>
+                <input type="text" class="requestsummary new" name="record_number_filter" placeholder="# (full number)" value="{{ num_selected }}" size="16" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'num', '{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
+
+                <!-- Record Name Title -->
+                {% if filter_name == None %}
+                {% set name_selected = "" %}
                 {% else %}
-                    <button class="requestsummary saved" tabindex="-1">&#8680;</button>
+                {% set name_selected = filter_name %}
                 {% endif %}
-                ({{ '%03d' % total }})
-            </div>
+                <input type="text" class="requestsummary new" name="record_name_filter" placeholder="Name (type to search)" value="{{ name_selected }}" size="24" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'name', '{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
 
-            {% else %}
+                <!-- Record User Owner Filter -->
+                {% if filter_owner == None %}
+                {% set owner_selected = "Owner" %}
+                {% else %}
+                {% set owner_selected = "Owner (" ~ user_records[filter_owner|int()]['namelast'] ~ ", " ~ user_records[filter_owner|int()]['namefirst'] ~ ")" %}
+                {% endif %}
+                <select class="requestsummary new" name="record_user_filter" style="width:160px" onchange="filterChange(this)">
+                    <option value="">{{owner_selected}}</option>
+                    <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">All</option>
+                    {% for user_record in user_records %}
+                    {% if (user_record['login'] != "_deleted") and ((user_record['org']|int() == g.user['org']|int()) or (user_record['_index'] == g.user['_index'])) %}
+                        <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}&owner={{ user_record['_index']|int() }}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">{{ user_record['namelast'] ~ ", " ~ user_record['namefirst'] }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
 
-            <div class="recordsarea">
-                <br>No access to records<br><br>You might need to be assigned to an organization.
-            </div>
+                {% if g.user['admin'] == True %}
+                <!-- Record Organization Owner Filter -->
+                {% if filter_org == None %}
+                {% set org_selected = "Org" %}
+                {% else %}
+                {% set org_selected = "Org (" ~ org_records[filter_org|int()]['name'] ~ ")" %}
+                {% endif %}
+                <select class="requestsummary new" name="record_org_filter" style="width:160px" onchange="filterChange(this)">
+                    <option value="">{{org_selected}}</option>
+                    <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}">All</option>
+                    {% for org_record in org_records %}
+                    {% if (org_record['name'] != "_deleted") and (g.user['admin'] == True) %}
+                        <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}&org={{ org_record['_index']|int() }}">{{ org_record['name'] }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                </form>
             
-            {% endif %}
+                {% if (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
+
+                    {% for recorddata in recordlist %}
+
+                        <div class="recordsarea">
+
+                            <!-- Check to see if record owned by user -->
+                            {% if recorddata['user']|int() == g.user['_index'] or (g.user['admin'] == True) or ((g.user['orgadmin'] == True) and (g.user['org']|int() == recorddata['org']|int())) %}
+                                {% set recorddata_color = "prod" %}
+                                {% set recorddata_owner = true %}
+                            {% else %}
+                                {% set recorddata_color = "new" %}
+                                {% set recorddata_owner = false %}
+                            {% endif %}
+
+                            <br>
+
+                            <!-- Record Count -->
+                            <input type="text"
+                            class="requestsummary new"
+                            name="record_count" value="{{ '%03d' % (start + loop.index - 1) }}" size="3" readonly tabindex="-1">
+                            
+                            <!-- Record Number -->
+                            <input type="text"
+                            {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }} "{% endif %}
+                            name="recorddata_number" value="{{ recorddata['number']|int() }}" size="16" readonly>
+
+                            <!-- Record Name -->
+                            <input type="text"
+                            {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
+                            name="recorddata_name" value="{{ recorddata['name'] }}" size="24" readonly>
+
+                            <!-- Record User Owner -->
+                            {% set user_index = recorddata['user']|int() %}
+                            {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
+                                {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
+                            {% else %}
+                                {% set user_name = "No user" %}
+                            {% endif %}
+                            <input type="text"
+                            {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
+                            name="recorddata_user" value="{{ recorddata_name }}" size="20" readonly>
+
+                            {% if g.user['admin'] == True %}
+                            <!-- Record Org Owner -->
+                            {% set org_index = recorddata['org']|int() %}
+                            {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
+                                {% set org_name = org_records[org_index]['name'] %}
+                            {% else %}
+                                {% set org_name = "No organization" %}
+                            {% endif %}
+                            <input type="text"
+                            {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
+                            name="recorddata_org" value="{{ org_name }}" size="20" readonly>
+                            {% endif %}
+
+                        </div>
+
+                    {% endfor %}
+
+                <div class="recordsarea"><br>
+                    {% if startprev != start %}
+                    <a href="{{request.path}}?start={{ '%03d' % startprev }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
+                        <button class="requestsummary save">&#8678;</button></a>
+                    {% else %}
+                        <button class="requestsummary saved" tabindex="-1">&#8678;</button>
+                    {% endif %}
+                    {{ '%03d' % start }} &#8722;&#8722; {{ '%03d' % end }}
+                    {% if startnext != start %}
+                    <a href="{{request.path}}?start={{ '%03d' % startnext }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
+                        <button class="requestsummary save">&#8680;</button></a>
+                    {% else %}
+                        <button class="requestsummary saved" tabindex="-1">&#8680;</button>
+                    {% endif %}
+                    ({{ '%03d' % total }})
+                </div>
+
+                {% else %}
+
+                <div class="recordsarea">
+                    <br>No access to records<br><br>You might need to be assigned to an organization.
+                </div>
+                
+                {% endif %}
+
+            </div>
 
         </div>
 

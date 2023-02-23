@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block body %}
+
+        <div class="main">
+            
+            <div class="buttonarea">
+                <a href="/" tabindex="-1">
+                    <button class="datalarge save">Collections &#9814;</button>
+                </a>
+                <a href="#" tabindex="-1">
+                    <button class="datalarge saved" tabindex="-1">New Record &#9814;</button>
+                </a>
+            </div>
+
+            <br>
+            
+            <div>
+    
+                <div class="formarea">
+                    <div>
+                        <div>
+                            <form method="POST" enctype="multipart/form-data">
+                            
+                            {% if (recorddetails is defined) and ((g.org._index|int() != 999999999999) or (g.user['admin'] == True)) %}
+
+                                <!-- Record Number -->
+                                <p><input type="text" placeholder="Record number"
+                                {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                                 style="text-align: left; width:80%" name="record_number" value="{{ recorddetails['record_number']|int() }}" readonly></p>
+
+                                <!-- Record Name -->
+                                <p><input type="text" placeholder="Record name not supplied"
+                                {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                                 style="text-align: left; width:80%" name="record_name" value="{{ recorddetails['record_name'] }}"
+                                 readonly></p>
+    
+                                <!-- Document -->
+                                {% if recorddetails is defined and recorddocuments is defined %}
+                                {% for recorddocument in recorddocuments %}
+                                <a href="/doc/{{ recorddocument['document_number'] }}" target="_blank"><input type="text"
+                                {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                                 name="record_file_{{ loop.index }}"
+                                 value="Document: {{ recorddocument['document_file'] }}"
+                                 width:100% readonly></a>
+                                {% endfor %}
+                                {% endif %}
+    
+                                {% set org_index = recorddetails['record_org']|int() %}
+                                {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
+                                    {% set org_name = org_records[org_index]['name'] %}
+                                {% else %}
+                                    {% set org_name = "No organization" %}
+                                {% endif %}
+                                <!-- Record owned by Organization -->
+                                <p><input type="text"
+                                {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                                 style="text-align: left; width:80%" name="record_org" value="Org tied to: {{ org_name }}" readonly></p>
+
+                                {% set user_index = recorddetails['record_user']|int() %}
+                                {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
+                                    {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
+                                {% else %}
+                                    {% set user_name = "No user" %}
+                                {% endif %}
+                                <!-- Record owned by User -->
+                                <p><input type="text"
+                                {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                                 style="text-align: left; width:80%" name="record_user" value="User tied to: {{ user_name }}" readonly></p>
+    
+                            {% elif (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
+    
+                                <!-- Check to see if editing record, and data passed blocked -->
+                                {% if recordedit is defined %}
+                                    {% if ("error" in pagetitle) or ("Blocked..." in recordedit['record_name']) %}
+                                        {% set record_color = "maint" %}
+                                    {% else %}
+                                        {% set record_color = "new" %}
+                                    {% endif %}
+                                {% else %}
+                                    {% set record_color = "new" %}
+                                {% endif %}
+
+                                <!-- Record Number -->
+                                {% if recordedit is defined %}
+                                <p><br><input type="text"
+                                 class="request {{ record_color }}"
+                                 name="record_number" value="{{ recordedit['record_number']|int() }}"
+                                 width:100% readonly></p>
+                                {% endif %}
+
+                                <!-- Record Name -->
+                                <p><br><input type="text" placeholder="Record name here..."
+                                 class="request {{ record_color }}"
+                                 name="record_name" value="{% if recordedit is defined %}{{ recordedit['record_name'] }}{% else %}{% endif %}"
+                                 width:100% required autofocus></p>
+
+                                <!-- Record Document -->
+                                {% if recordedit is defined and recorddocuments is defined %}
+                                <br>
+                                {% for recorddocument in recorddocuments %}
+                                <a href="/doc/{{ recorddocument['document_number'] }}" target="_blank"><input type="text"
+                                 class="request {{ record_color }}"
+                                 name="record_file_{{ loop.index }}"
+                                 value="Document: {{ recorddocument['document_file'] }}"
+                                 width:100% readonly></a>
+                                {% endfor %}
+                                {% endif %}
+
+                                <p>Document to upload (you can add more later) <input type="file" class="request new" name="record_file"></p>
+
+                                {% if recordedit is defined %}
+                                {% set org_index = recordedit['record_org']|int() %}
+                                {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
+                                    {% set org_name = org_records[org_index]['name'] %}
+                                {% else %}
+                                    {% set org_name = "No organization" %}
+                                {% endif %}
+                                <!-- Record owned by Organization -->
+                                {% if (g.user['admin'] == True) %}
+                                <br><select class="request new" name="record_org" required style="width:30%">
+                                    <option value="{{ org_index }}">{{ org_name }}</option>
+                                    {% for org_record in org_records %}
+                                    {% if (org_record is defined) and (org_record['_index']|int() != org_index) and (org_record['name'] != "_deleted") %}
+                                        <option value="{{ org_record['_index']|int() }}">{{ org_record['name'] }}</option>
+                                    {% elif org_record is not defined %}
+                                        <option value="{{ org_record['_index']|int() }}">{{ org_record['name'] }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% else %}
+                                <p><br><input type="hidden" class="request prod" name="record_org"
+                                 value="{{ org_index }}"
+                                 width:100% readonly></p>
+                                {% endif %}
+                                {% endif %}
+
+                                <br><br>
+
+                                {% if recordedit is defined %}
+                                {% set user_index = recordedit['record_user']|int() %}
+                                {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
+                                    {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
+                                {% else %}
+                                    {% set user_name = "No user" %}
+                                {% endif %}
+                                {% if (g.user['admin'] == True) or ((g.user['orgadmin'] == True) and (recordedit['record_org'] is defined) and (g.user.org|int() == recordedit['record_org']|int())) %}
+                                <!-- record owned by User -->
+                                <br><select class="request new" name="record_user" required style="width:30%">
+                                    <option value="{{ user_index }}">{{ user_name }}</option>
+                                    {% for user_record in user_records %}
+                                    {% if (user_record is defined) and (user_record['_index']|int() != user_index) and (user_record['login'] != "_deleted") and (user_record['org']|int() == recordedit['record_org']|int()) %}
+                                        <option value="{{ user_record['_index']|int() }}">{{ user_record['namelast'] ~ ", " ~ user_record['namefirst'] }}</option>
+                                    {% elif (user_record is not defined) and (user_record['org']|int() == recordedit['record_org']|int()) %}
+                                        <option value="{{ user_record['_index']|int() }}">{{ user_record['namelast'] ~ ", " ~ user_record['namefirst'] }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% else %}
+                                <p><br><input type="hidden" class="request prod" name="record_user"
+                                 value="{{ user_index }}"
+                                 width:100% readonly></p>
+                                {% endif %}
+                                {% endif %}
+                            
+                            {% else %}
+
+                                No access to records<br><br>You might need to be assigned to an organization.
+                                
+                            {% endif %}
+    
+                            <br><br>
+                        </div>
+                    </div>
+    
+                </div>
+    
+                <br>
+    
+                <div class="formarea">
+    
+                            {% if recorddetails is defined %}
+    
+                                </form>
+                                <a href="#" tabindex="-1"><button class="datalarge save">Done</button></a>
+                                <a href="#"
+                                 class="tooltip" tabindex="-1"><button class="datalarge create">New Record &#9743;</button></a>
+    
+                            {% elif recordedit is defined %}
+
+                                <input class="datalarge save" type="submit" value="Save Record" formaction="/#">
+                                </form>
+                                <a href="/#" tabindex="-1"><button class="datalarge del">Delete</button></a>
+
+                            {% elif (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
+    
+                                <input class="datalarge save" type="submit" value="Create Record" formaction="/#">
+                                </form>
+    
+                            {% else %}
+
+                            {% endif %}
+                            
+                </div>
+    
+            </div>
+
+        </div>
+
+{% endblock %}
