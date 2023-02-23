@@ -107,29 +107,34 @@ fjm_app.permanent_session_lifetime = timedelta(hours=1)
 # File upload settings
 fjm_app.config['MAX_CONTENT_PATH'] = 50000000 # 50000000 equals 50MB
 
-# MongoDB object, db_conn_type of mongodb for non-Atlas hosted
 db_connection_error = True # Default to an error
-if configuration['error'] == False:
-    # Remove password for the log
-    db_conn_host, db_conn_type, db_conn_remaining = str(configuration['dbconn']).split(":")
-    db_conn_end = str(db_conn_remaining).split("@")[1]
-    db_conn_log = db_conn_host + ":" + db_conn_type + ':[password]@' + db_conn_end
-    try:
-        # Make connection
-        db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
-        # Test connection, will bomb if above connection did not work
-        test_query = int(db_inst.db["not_real_collection"].count_documents({'not_real_record': "nothing_here"}))
-        db_connection_error = False # Database connected if made it here
-        logger.info('  Connected to DB: ' + db_conn_log)
-    except:
-        db_connection_error = True # Flag an error if we cannot connect to the database
-        print("Database failed to connect!")
-        logger.info('   Failed conn DB: ' + db_conn_log)
-else:
-    # Configuration error, do not attempt to connect to database
-    db_connection_error = True
-    print("Database not connected because of problem opening " + config_file + ".")
-    logger.info('Database not connected because of problem opening ' + config_file)
+
+# Create connection to database
+def db_setup():
+    global db_connection_error
+    # MongoDB object, db_conn_type of mongodb for non-Atlas hosted
+    if configuration['error'] == False:
+        # Remove password for the log
+        db_conn_host, db_conn_type, db_conn_remaining = str(configuration['dbconn']).split(":")
+        db_conn_end = str(db_conn_remaining).split("@")[1]
+        db_conn_log = db_conn_host + ":" + db_conn_type + ':[password]@' + db_conn_end
+        try:
+            # Make connection
+            db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
+            # Test connection, will bomb if above connection did not work
+            test_query = int(db_inst.db["not_real_collection"].count_documents({'not_real_record': "nothing_here"}))
+            db_connection_error = False # Database connected if made it here
+            logger.info('  Connected to DB: ' + db_conn_log)
+        except:
+            db_connection_error = True # Flag an error if we cannot connect to the database
+            print("Database failed to connect!")
+            logger.info('   Failed conn DB: ' + db_conn_log)
+    else:
+        # Configuration error, do not attempt to connect to database
+        db_connection_error = True
+        print("Database not connected because of problem opening " + config_file + ".")
+        logger.info('Database not connected because of problem opening ' + config_file)
+db_setup()
 
 # Existing user session
 def session_existing():

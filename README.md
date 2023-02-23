@@ -11,3 +11,4 @@ Application build with Python Flask/Jinja2 and MongoDB
 
 # Future ideas
 - CSS class renames and remove unused
+- If app starts without database connection, have a Flask auto-reload on a timer while still displaying error page
