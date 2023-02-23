@@ -110,7 +110,10 @@ fjm_app.config['MAX_CONTENT_PATH'] = 50000000 # 50000000 equals 50MB
 db_connection_error = True # Default to an error
 
 # Create connection to database
-def db_setup():
+db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
+
+# Test and log connection
+def db_test():
     global db_connection_error
     # MongoDB object, db_conn_type of mongodb for non-Atlas hosted
     if configuration['error'] == False:
@@ -119,8 +122,6 @@ def db_setup():
         db_conn_end = str(db_conn_remaining).split("@")[1]
         db_conn_log = db_conn_host + ":" + db_conn_type + ':[password]@' + db_conn_end
         try:
-            # Make connection
-            db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
             # Test connection, will bomb if above connection did not work
             test_query = int(db_inst.db["not_real_collection"].count_documents({'not_real_record': "nothing_here"}))
             db_connection_error = False # Database connected if made it here
@@ -134,7 +135,7 @@ def db_setup():
         db_connection_error = True
         print("Database not connected because of problem opening " + config_file + ".")
         logger.info('Database not connected because of problem opening ' + config_file)
-db_setup()
+db_test()
 
 # Existing user session
 def session_existing():
@@ -245,6 +246,7 @@ def collspage():
     if (filter_org != 999999999999):
         query_filter['record_org'] = filter_org
     # Page
+    page_title = "Records"
     if int(session['user_id']) == 999999999999: # User is a guest
         logger.info(request.remote_addr + ' ==> Collections listing page access error (' + str(g.user['login']) + ')')
         # Put a delay in for denial-of service attacks
@@ -315,6 +317,7 @@ def collpage():
     if (filter_number != 999999999999):
         query_filter['record_number'] = filter_number
     # Page
+    page_title = "Record"
     if int(session['user_id']) == 999999999999: # User is a guest
         logger.info(request.remote_addr + ' ==> Collection page access error for ' + filter_number + ' (' + str(g.user['login']) + ')')
         # Prompt to login
@@ -327,7 +330,7 @@ def collpage():
     else:
         # Collection name argument passed
         data_coll = request.args.get('data', default = "", type = str)
-        if (data_coll != ""):
+        if (data_coll == ""):
             logger.info(request.remote_addr + ' ==> Collection name not passed (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
             page_title = "You must pass a collection name"
             # Show page error
@@ -422,7 +425,7 @@ def collpage():
                     document_records.append({'document_number': 999999999999, 'document_record': 999999999999, 'document_file': "Blocked..."})
 
             # Confirm new record
-            return render_template('collect.html', pagetitle=record_message, recorddetails=new_record_details, recorddocuments=document_records, org_records=orgs, user_records=users)
+            return render_template('collection.html', pagetitle=record_message, recorddetails=new_record_details, recorddocuments=document_records, org_records=orgs, user_records=users)
 
         else: # GET request
             # Show individual record page

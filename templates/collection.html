@@ -2,13 +2,12 @@
 {% block body %}
 
         <div class="main">
+
+        {% set filter_coll = request.args.get('data') %}
             
             <div class="buttonarea">
                 <a href="/" tabindex="-1">
                     <button class="datalarge save">Collections &#9814;</button>
-                </a>
-                <a href="#" tabindex="-1">
-                    <button class="datalarge saved" tabindex="-1">New Record &#9814;</button>
                 </a>
             </div>
 
@@ -181,9 +180,8 @@
                             {% if recorddetails is defined %}
     
                                 </form>
-                                <a href="#" tabindex="-1"><button class="datalarge save">Done</button></a>
-                                <a href="#"
-                                 class="tooltip" tabindex="-1"><button class="datalarge create">New Record &#9743;</button></a>
+                                <a href="/" tabindex="-1"><button class="datalarge save">Done</button></a>
+                                <a href="/coll?data={{ filter_coll }}" class="tooltip" tabindex="-1"><button class="datalarge create">New Record &#9743;</button></a>
     
                             {% elif recordedit is defined %}
 
@@ -193,7 +191,7 @@
 
                             {% elif (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
     
-                                <input class="datalarge save" type="submit" value="Create Record" formaction="/#">
+                                <input class="datalarge create" type="submit" value="Create Record" formaction="/coll?data={{ filter_coll }}">
                                 </form>
     
                             {% else %}

@@ -3,12 +3,14 @@
 
         <div class="main">
             
+            {% set filter_coll = request.args.get('data') %}
+
             <div class="buttonarea">
                 <a href="/" tabindex="-1">
                     <button class="datalarge save">Collections &#9814;</button>
                 </a>
-                <a href="/coll" tabindex="-1">
-                    <button class="datalarge save">New Record &#9814;</button>
+                <a href="/coll?data={{ filter_coll }}" tabindex="-1">
+                    <button class="datalarge create">New Record &#9814;</button>
                 </a>
             </div>
 
@@ -98,7 +100,7 @@
                         <div class="recordsarea">
 
                             <!-- Check to see if record owned by user -->
-                            {% if recorddata['user']|int() == g.user['_index'] or (g.user['admin'] == True) or ((g.user['orgadmin'] == True) and (g.user['org']|int() == recorddata['org']|int())) %}
+                            {% if recorddata['record_user']|int() == g.user['_index'] or (g.user['admin'] == True) or ((g.user['orgadmin'] == True) and (g.user['org']|int() == recorddata['record_org']|int())) %}
                                 {% set recorddata_color = "prod" %}
                                 {% set recorddata_owner = true %}
                             {% else %}
@@ -116,15 +118,15 @@
                             <!-- Record Number -->
                             <input type="text"
                             {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }} "{% endif %}
-                            name="recorddata_number" value="{{ recorddata['number']|int() }}" size="16" readonly>
+                            name="recorddata_number" value="{{ recorddata['record_number']|int() }}" size="16" readonly>
 
                             <!-- Record Name -->
                             <input type="text"
                             {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
-                            name="recorddata_name" value="{{ recorddata['name'] }}" size="24" readonly>
+                            name="recorddata_name" value="{{ recorddata['record_name'] }}" size="24" readonly>
 
                             <!-- Record User Owner -->
-                            {% set user_index = recorddata['user']|int() %}
+                            {% set user_index = recorddata['record_user']|int() %}
                             {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
                                 {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
                             {% else %}
@@ -132,11 +134,11 @@
                             {% endif %}
                             <input type="text"
                             {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
-                            name="recorddata_user" value="{{ recorddata_name }}" size="20" readonly>
+                            name="recorddata_user" value="{{ user_name }}" size="20" readonly>
 
                             {% if g.user['admin'] == True %}
                             <!-- Record Org Owner -->
-                            {% set org_index = recorddata['org']|int() %}
+                            {% set org_index = recorddata['record_org']|int() %}
                             {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
                                 {% set org_name = org_records[org_index]['name'] %}
                             {% else %}
