@@ -109,9 +109,16 @@ fjm_app.config['MAX_CONTENT_PATH'] = 50000000 # 50000000 equals 50MB
 
 # MongoDB object, db_conn_type of mongodb for non-Atlas hosted
 if configuration['error'] == False:
+    # Make connection
     db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
+    # Remove password for the log
+    db_conn_host, db_conn_type, db_conn_remaining = str(configuration['dbconn']).split(":")
+    db_conn_end = str(db_conn_remaining).split("@")[1]
+    logger.info('  Connected to DB: ' + db_conn_host + ":" + db_conn_type + ':[password]@' + db_conn_end)
 else:
-    print('Database not connected because of problem opening ' + config_file + '.')
+    # Configuration error, do not attempt to connect to database
+    print("Database not connected because of problem opening " + config_file + ".")
+    logger.info('Database not connected because of problem opening ' + config_file)
 
 # Existing user session
 def session_existing():
