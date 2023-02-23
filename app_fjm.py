@@ -218,7 +218,7 @@ def landingpage():
     if int(g.org['_index']) == 999999999999: # User is not assigned to an organization
         return render_template('landing.html', pagetitle="You must be assigned to an orgnization to have access")
     else:
-        return render_template('landing.html', pagetitle="Main Page", config_data=configuration)
+        return render_template('landing.html', pagetitle="Collections", config_data=configuration)
 
 # Collections page listing records
 @fjm_app.route('/colls')
@@ -263,6 +263,7 @@ def collspage():
             page_title = "You must pass a collection name"
             # Show page error
             return render_template('collections.html', pagetitle=page_title, pagedims=page_dims)
+        page_title = "Records for collection: " + str(data_coll)
         # Setup sort
         record_sort = tuple([('record_name', 1)])
         # Create list to collect records
@@ -403,21 +404,21 @@ def collpage():
                 try:
                     # Create new record in database collection
                     db_inst.db[data_coll].insert_one({'record_number': int(record_number), 'record_name': record_name, 'record_user': int(record_user), 'record_org': int(record_org)})
-                    record_message = "Record added"
+                    record_message = "Record added to collection: " + str(data_coll)
                     logger.info(request.remote_addr + ' ==> New record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(new_record_details))
                 except:
                     logger.info(request.remote_addr + ' ==> Database error adding new record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
-                    record_message = "Record not added, database error"
+                    record_message = "Record not added, database error for collection: " + str(data_coll)
             else:
                 if g.user['admin'] == True or int(g.user['_index']) == record_user or (int(g.user['org']) == record_org and g.user['orgadmin'] == True): # User is admin, record owner, or record org admin
                     try:
                         # Modify existing record details in database collection
                         db_inst.db[data_coll].replace_one({'record_number': int(record_number) },{'record_number': int(record_number), 'record_name': record_name, 'record_user': int(record_user), 'record_org': int(record_org)})
-                        record_message = "Record modified"
+                        record_message = "Record modified in collection: " + str(data_coll)
                         logger.info(request.remote_addr + ' ==> Modified record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(new_record_details))
                     except:
                         logger.info(request.remote_addr + ' ==> Database error modifying record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
-                        record_message = "Record not modified, database error"
+                        record_message = "Record not modified, database error for collection: " + str(data_coll)
                 else:
                     logger.info(request.remote_addr + ' ==> Denied access to modify record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
                     record_message = "Record not modified error"
@@ -432,7 +433,8 @@ def collpage():
             page_title = "Record"
             if int(filter_number) == 999999999999: # New record
                 logger.info(request.remote_addr + ' ==> New record page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
-                return render_template('collection.html', pagetitle="Create a new record", org_records=orgs, user_records=users)
+                page_title = "Create a new record in collection: " + str(data_coll)
+                return render_template('collection.html', pagetitle=page_title, org_records=orgs, user_records=users)
             else: # Existing record
                 record_number = filter_number
                 new_record = {}
