@@ -108,15 +108,26 @@ fjm_app.permanent_session_lifetime = timedelta(hours=1)
 fjm_app.config['MAX_CONTENT_PATH'] = 50000000 # 50000000 equals 50MB
 
 # MongoDB object, db_conn_type of mongodb for non-Atlas hosted
+db_connection_error = True # Default to an error
 if configuration['error'] == False:
-    # Make connection
-    db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
     # Remove password for the log
     db_conn_host, db_conn_type, db_conn_remaining = str(configuration['dbconn']).split(":")
     db_conn_end = str(db_conn_remaining).split("@")[1]
-    logger.info('  Connected to DB: ' + db_conn_host + ":" + db_conn_type + ':[password]@' + db_conn_end)
+    db_conn_log = db_conn_host + ":" + db_conn_type + ':[password]@' + db_conn_end
+    try:
+        # Make connection
+        db_inst = PyMongo(fjm_app, uri=configuration['dbconn'])
+        # Test connection, will bomb if above connection did not work
+        test_query = int(db_inst.db["not_real_collection"].count_documents({'not_real_record': "nothing_here"}))
+        db_connection_error = False # Database connected if made it here
+        logger.info('  Connected to DB: ' + db_conn_log)
+    except:
+        db_connection_error = True # Flag an error if we cannot connect to the database
+        print("Database failed to connect!")
+        logger.info('   Failed conn DB: ' + db_conn_log)
 else:
     # Configuration error, do not attempt to connect to database
+    db_connection_error = True
     print("Database not connected because of problem opening " + config_file + ".")
     logger.info('Database not connected because of problem opening ' + config_file)
 
@@ -186,9 +197,12 @@ def session_setup():
 # Endpoint pre-processing
 @fjm_app.before_request
 def before_request():
-    # Setup the session for the user
-    failure = session_setup()
-    if failure: # Returns true if there was a problem
+    if db_connection_error == False:
+        # Setup the session for the user
+        failure = session_setup()
+        if failure: # Returns true if there was a problem
+            return render_template('error.html')
+    else:
         return render_template('error.html')
 
 # Endpoint root
@@ -237,7 +251,7 @@ def collspage():
     else: # User is valid and in an organization
         # Collection name argument passed
         data_coll = request.args.get('data', default = "", type = str)
-        if (data_coll != ""):
+        if (data_coll == ""):
             logger.info(request.remote_addr + ' ==> Collection name not passed (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
             page_title = "You must pass a collection name"
             # Show page error
