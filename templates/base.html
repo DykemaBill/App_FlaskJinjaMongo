@@ -54,6 +54,7 @@
             {% if not request.path.startswith('/log') %}
                 <div class="formarea">
                     <br>
+                    <!-- NEED TO FIX THE FOLLOWING LOGIC -->
                     {% if (g.user.login != 'guest') or (notnewinstall) %}
                     <a href="/loginpassword">Password</a> | <a href="/logout">Logout</a><br><br>
                     {% elif notnewinstall == false %}

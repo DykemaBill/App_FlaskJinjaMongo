@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% block body %}
 
+        <script src="{{ url_for('static', filename='recordsperpage.js') }}"></script>
+        <script src="{{ url_for('static', filename='filterselect.js') }}"></script>
+
         <div class="main">
             
             {% set filter_coll = request.args.get('data') %}
@@ -39,7 +42,7 @@
                 <input id="scriptInput" type="text" class="requestsummary control" name="user_pagerecords" value="{% if pagedims is defined %}{{ '%03d' % records }}{% endif %}" size="3" onfocus="captureValue()" onblur="submitPost()">
 
                 <!-- Record count change hidden field for return address -->
-                <input type="text" name="user_pagereturn" value="{{request.path}}?start={{ '%03d' % start }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" hidden>
+                <input type="text" name="user_pagereturn" value="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" hidden>
                 
                 <!-- Record Number Title -->
                 {% if filter_num == None %}
@@ -47,15 +50,15 @@
                 {% else %}
                 {% set num_selected = filter_num %}
                 {% endif %}
-                <input type="text" class="requestsummary new" name="record_number_filter" placeholder="# (full number)" value="{{ num_selected }}" size="16" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'num', '{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
+                <input type="text" class="requestsummary new" name="record_number_filter" placeholder="# (full number)" value="{{ num_selected }}" size="19" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'num', '{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
 
-                <!-- Record Name Title -->
+                <!-- Record Name Title TODO: FILTER NOT WORKING -->
                 {% if filter_name == None %}
                 {% set name_selected = "" %}
                 {% else %}
                 {% set name_selected = filter_name %}
                 {% endif %}
-                <input type="text" class="requestsummary new" name="record_name_filter" placeholder="Name (type to search)" value="{{ name_selected }}" size="24" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'name', '{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
+                <input type="text" class="requestsummary new" name="record_name_filter" placeholder="Name (type to search)" value="{{ name_selected }}" size="24" onfocus="captureSearch(this)" onchange="onblur(this)" onblur="filterSearch(this, 'name', '{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}')">
 
                 <!-- Record User Owner Filter -->
                 {% if filter_owner == None %}
@@ -65,10 +68,10 @@
                 {% endif %}
                 <select class="requestsummary new" name="record_user_filter" style="width:160px" onchange="filterChange(this)">
                     <option value="">{{owner_selected}}</option>
-                    <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">All</option>
+                    <option value="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">All</option>
                     {% for user_record in user_records %}
                     {% if (user_record['login'] != "_deleted") and ((user_record['org']|int() == g.user['org']|int()) or (user_record['_index'] == g.user['_index'])) %}
-                        <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}&owner={{ user_record['_index']|int() }}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">{{ user_record['namelast'] ~ ", " ~ user_record['namefirst'] }}</option>
+                        <option value="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}&owner={{ user_record['_index']|int() }}{% if filter_org != None %}&org={{ filter_org }}{% endif %}">{{ user_record['namelast'] ~ ", " ~ user_record['namefirst'] }}</option>
                     {% endif %}
                     {% endfor %}
                 </select>
@@ -82,10 +85,10 @@
                 {% endif %}
                 <select class="requestsummary new" name="record_org_filter" style="width:160px" onchange="filterChange(this)">
                     <option value="">{{org_selected}}</option>
-                    <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}">All</option>
+                    <option value="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}">All</option>
                     {% for org_record in org_records %}
                     {% if (org_record['name'] != "_deleted") and (g.user['admin'] == True) %}
-                        <option value="{{request.path}}?start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}&org={{ org_record['_index']|int() }}">{{ org_record['name'] }}</option>
+                        <option value="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % start }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}&org={{ org_record['_index']|int() }}">{{ org_record['name'] }}</option>
                     {% endif %}
                     {% endfor %}
                 </select>
@@ -122,7 +125,7 @@
                             <!-- Record Number -->
                             <input type="text"
                             {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }} "{% endif %}
-                            name="recorddata_number" value="{{ recorddata['record_number']|int() }}" size="16" readonly>
+                            name="recorddata_number" value="{{ recorddata['record_number']|int() }}" size="19" readonly>
 
                             <!-- Record Name -->
                             <input type="text"
@@ -172,14 +175,14 @@
 
                 <div class="recordsarea"><br>
                     {% if startprev != start %}
-                    <a href="{{request.path}}?start={{ '%03d' % startprev }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
+                    <a href="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % startprev }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
                         <button class="requestsummary save">&#8678;</button></a>
                     {% else %}
                         <button class="requestsummary saved" tabindex="-1">&#8678;</button>
                     {% endif %}
                     {{ '%03d' % start }} &#8722;&#8722; {{ '%03d' % end }}
                     {% if startnext != start %}
-                    <a href="{{request.path}}?start={{ '%03d' % startnext }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
+                    <a href="{{request.path}}?data={{ filter_coll }}&start={{ '%03d' % startnext }}&records={{ '%03d' % records }}{% if filter_num != None %}&num={{ filter_num }}{% endif %}{% if filter_name != None %}&name={{ filter_name }}{% endif %}{% if filter_owner != None %}&owner={{ filter_owner }}{% endif %}{% if filter_org != None %}&org={{ filter_org }}{% endif %}" tabindex="-1">
                         <button class="requestsummary save">&#8680;</button></a>
                     {% else %}
                         <button class="requestsummary saved" tabindex="-1">&#8680;</button>

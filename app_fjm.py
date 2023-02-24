@@ -785,7 +785,7 @@ def loginpasswordpage():
             logger.info(request.remote_addr + ' ==> Login password change page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
             return render_template('loginpassword.html', pagetitle="Change your password")
 
-# User darkmode settings
+# User darkmode settings TODO: NEXT CHANGE THIS ROUTE AND ADD RECORDS PER PAGE
 @fjm_app.route('/darkmode')
 def darkmodeset():
     if users_exist == False: # No users exist, will need to prompt to create one
