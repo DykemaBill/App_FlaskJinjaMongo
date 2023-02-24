@@ -29,6 +29,9 @@ def config_load():
     configuration = read_cfg(config_file)
 config_load()
 
+# Users tracking
+users_exist = False # Assumes no users exist
+
 # Read users
 users = list([])
 def users_load():
@@ -92,7 +95,7 @@ if len(users) > 1:
         # Write user and their organization to the log
         logger.info('                   ' + user_record['namelast'] + ', ' + user_record['namefirst'] + ' (' + user_record['login'] + ') - ' + org_name)
 else:
-    configuration['error'] = True
+    users_exist = False
     print ("Unable to find any users")
     logger.info('Problem reading ' + users_file + ', check your users file!')
 
@@ -174,6 +177,7 @@ def session_new():
 
 # Setup user session from browser or API
 def session_setup():
+    global users_exist # Will use this to decide if we have users yet
     # Set the session to be saved by end-user browser or API if it is capturing the session
     session.permanent = True
     # Reload all configuration files to capture any changes made
@@ -181,9 +185,11 @@ def session_setup():
     users_load()
     # Users check
     if len(users) < 1:
-        configuration['error'] = True
+        users_exist = False
         print ("Unable to find any users")
-        logger.info('Problem reading ' + users_file + ', check your users file!')
+        logger.info('Problem reading ' + users_file + ', will assume we need to prompt to create one.')
+    else:
+        users_exist = True
     orgs_load()
     # Orgs check
     if len(orgs) < 1:
@@ -192,7 +198,7 @@ def session_setup():
         logger.info('Problem reading ' + orgs_file + ', check your organizations file!')
     if configuration['error'] == False:
         # Check to see if the end user already has an existing session
-        if 'user_id' in session and int(session['user_id']) != 999999999999: # User session exists and it is not a guest
+        if 'user_id' in session and int(session['user_id']) != 999999999999 and users_exist: # User session exists and it is not a guest
             session_existing()
         else: # User is a new or existing guest
             session_new()
@@ -216,7 +222,7 @@ def before_request():
 def landingpage():
     logger.info(request.remote_addr + ' ==> Landing page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     if int(g.org['_index']) == 999999999999: # User is not assigned to an organization
-        return render_template('landing.html', pagetitle="You must be assigned to an orgnization to have access")
+        return render_template('landing.html', pagetitle="You must be assigned to an organization to have access", notnewinstall=users_exist)
     else:
         return render_template('landing.html', pagetitle="Collections", config_data=configuration)
 
@@ -247,6 +253,9 @@ def collspage():
         query_filter['record_org'] = filter_org
     # Page
     page_title = "Records"
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     if int(session['user_id']) == 999999999999: # User is a guest
         logger.info(request.remote_addr + ' ==> Collections listing page access error (' + str(g.user['login']) + ')')
         # Put a delay in for denial-of service attacks
@@ -319,6 +328,9 @@ def collpage():
         query_filter['record_number'] = filter_number
     # Page
     page_title = "Record"
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     if int(session['user_id']) == 999999999999: # User is a guest
         logger.info(request.remote_addr + ' ==> Collection page access error for ' + filter_number + ' (' + str(g.user['login']) + ')')
         # Prompt to login
@@ -463,6 +475,9 @@ def collpage():
 # Logs page
 @fjm_app.route('/status')
 def statuspage():
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     if int(session['user_id']) == 999999999999: # User is a guest
         # Put a delay in to slow denial-of-service attacks
         # time.sleep(5)
@@ -491,6 +506,9 @@ def statuspage():
 # Login page
 @fjm_app.route('/login', methods=['GET', 'POST'])
 def loginpage():
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     # Put a delay in to slow brute-force attacks
     # time.sleep(5)
     if request.method == 'POST':
@@ -553,6 +571,9 @@ def loginpage():
 # Logout page
 @fjm_app.route('/logout')
 def logoutpage():
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     logger.info(request.remote_addr + ' ==> Logout page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     # Clear login session
     session.pop('user_id', None)
@@ -586,14 +607,20 @@ def loginnewpage():
         
         # Look to see if a user with the same login already exists
         user_check = [user_record for user_record in users if user_record['login'].lower() == user_request_login]
-        user_approved = False
-        user_admin = False
-        user_org = 999999999999
         user_orgadmin = False
         user_pagerecords = 5
         user_darkmode = False
         user_alert = True
-        user_new_message = "but not approved!"
+        if users_exist:
+            user_new_message = "but not approved!"
+            user_approved = False
+            user_admin = False
+            user_org = 999999999999
+        else: # Must be first user, adding as admin
+            user_new_message = "as adminstrator since it is the first user!"
+            user_approved = True
+            user_admin = True
+            user_org = 0
         if user_check:
             # Login is already in use
             logger.info(request.remote_addr + ' ==> Login name ' + user_request_login + ' already exists')
@@ -608,7 +635,7 @@ def loginnewpage():
                 user_index = 0
                 user_approved = True
                 user_admin = True
-                user_new_message = "first user automatically approved!"
+                user_new_message = "first user automatically approved as admin!"
             # Generate a one-time salt for this password in byte format
             pass_salt = bcrypt.gensalt()
             # Hash password
@@ -681,6 +708,9 @@ def loginnewpage():
 # Login password change
 @fjm_app.route('/loginpassword', methods=['GET', 'POST'])
 def loginpasswordpage():
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     if int(session['user_id']) == 999999999999: # User is a guest
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     else:
@@ -761,6 +791,9 @@ def loginpasswordpage():
 # User darkmode settings
 @fjm_app.route('/darkmode')
 def darkmodeset():
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
     if int(session['user_id']) == 999999999999: # User is a guest
         return redirect(url_for('loginpage', requestingurl=request.full_path))
     else:
@@ -809,6 +842,14 @@ def darkmodeset():
 # Place holder
 @fjm_app.route('/notused')
 def placeholderpage():
+    if users_exist == False: # No users exist, will need to prompt to create one
+        logger.info(request.remote_addr + ' ==> No users exist yet, prompting to create admin account )')
+        return redirect(url_for('loginnewpage'))
+    if int(session['user_id']) == 999999999999: # User is a guest
+        logger.info(request.remote_addr + ' ==> Place holder page access error (' + str(g.user['login']) + ')')
+        # Put a delay in for denial-of service attacks
+        # time.sleep(5)
+        return redirect(url_for('loginpage', requestingurl=request.full_path))
     logger.info(request.remote_addr + ' ==> Place holder page (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
     # Place holder page
     return render_template('placeholder.html', pagetitle="Flask / Jinja2 / MongoDB")

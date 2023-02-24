@@ -9,6 +9,7 @@
 mongo-volume
 postgres-volume
 dump
+users.cfg
 #*.cfg
 
 # Byte-compiled / optimized / DLL files

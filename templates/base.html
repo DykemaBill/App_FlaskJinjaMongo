@@ -51,14 +51,18 @@
         <!-- Footer -->
         <div class="foot">
 
+            {% if not request.path.startswith('/log') %}
                 <div class="formarea">
                     <br>
-                    {% if g.user.login != 'guest' %}
+                    {% if (g.user.login != 'guest') or (notnewinstall) %}
                     <a href="/loginpassword">Password</a> | <a href="/logout">Logout</a><br><br>
+                    {% elif notnewinstall == false %}
+                    <a href="/loginnew">Create Your First Account</a><br><br>
                     {% else %}
                     <a href="/login">Login</a><br><br>
                     {% endif %}
                 </div>
+            {% endif %}
             
             <h3>Contact {{ g.team }} for questions at <a href="mailto: {{ g.email }}">Support</a> {% if g.user['admin'] == True %}(<a href="/status">Status and Logs</a>){% endif %}</h3>
 
