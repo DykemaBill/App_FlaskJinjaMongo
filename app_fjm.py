@@ -1,6 +1,3 @@
-# The 2 test users in the users.cfg file have the following starter password
-## T3stUs3rP@ssword
-
 # Import libraries
 from flask import Flask, g, render_template, request, session, redirect, url_for
 from flask_pymongo import PyMongo # Needed for all MongoDB operations except deleting files
