@@ -2,13 +2,19 @@
 Application build with Python Flask/Jinja2 and MongoDB
 
 # To-Do's for the author
-- Build a simple version of the application - IN PROCESS
-- Implement dunder init files - DONE
+- Build a simple version of the application - DONE
+- Document handling with records - 
 - If no user exists, prompt user to create one at login - 
+- Security testing (orgs, admin, orgadmin) - 
+- CSS class renames and remove unused - 
+- Installation directions in README - 
+- Refactor primary Flask entry code file - 
+- Implement record deleting - 
+- User management page - 
+- User forgot password option - 
 
 # Bugs that need to be fixed
 - Password hash not working - FIXED
 
 # Future ideas
-- CSS class renames and remove unused
 - If app starts without database connection, have a Flask auto-reload on a timer while still displaying error page
