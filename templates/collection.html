@@ -185,9 +185,9 @@
     
                             {% elif recordedit is defined %}
 
-                                <input class="datalarge save" type="submit" value="Save Record" formaction="/#">
+                                <input class="datalarge save" type="submit" value="Save Record" formaction="/coll?data={{ filter_coll }}&num={{ recordedit['record_number']|int() }}">
                                 </form>
-                                <a href="/#" tabindex="-1"><button class="datalarge del">Delete</button></a>
+                                <a href="/notused" tabindex="-1"><button class="datalarge del">Delete</button></a>
 
                             {% elif (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
     

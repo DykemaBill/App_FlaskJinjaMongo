@@ -91,6 +91,10 @@
                 </select>
                 {% endif %}
 
+                <!-- Record Buttons Title -->
+                <input type="text" class="requestsummary new" name="buttons_title" value="Opts" size="5" readonly tabindex="-1">
+
+
                 </form>
             
                 {% if (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
@@ -147,6 +151,19 @@
                             <input type="text"
                             {% if "error" in pagetitle %}class="requestsummary maint"{% else %}class="requestsummary {{ recorddata_color }}"{% endif %}
                             name="recorddata_org" value="{{ org_name }}" size="20" readonly>
+                            {% endif %}
+
+                            <!-- Record Buttons -->
+                            {% if recorddata_owner %}
+                            <a href="/coll?data={{ filter_coll }}&num={{ recorddata['record_number']|int() }}"
+                                class="tooltip"><button class="requestsummary save" tabindex="-1">&#9998;</button></a>
+                            <a href="/notused"
+                                class="tooltip"><button class="requestsummary del" tabindex="-1">&#8856;</button></a>
+                            {% else %}
+                            <a href="#" tabindex="-1"
+                                class="tooltip"><button class="requestsummary saved" tabindex="-1">&#9998;</button></a>
+                            <a href="#" tabindex="-1"
+                                class="tooltip"><button class="requestsummary saved" tabindex="-1">&#8856;</button></a>
                             {% endif %}
 
                         </div>
