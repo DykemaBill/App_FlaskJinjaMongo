@@ -9,6 +9,7 @@
 mongo-volume
 postgres-volume
 dump
+Pipfile
 users.cfg
 #*.cfg
 

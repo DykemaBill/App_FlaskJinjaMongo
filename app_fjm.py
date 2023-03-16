@@ -43,6 +43,10 @@ def orgs_load():
     orgs = read_orgs(orgs_file)
 orgs_load()
 
+# Create log folder if it does not already exist
+if not os.path.exists(log_file):
+    os.mkdir(log_file)
+
 # Setup logging
 logger = setup_log(log_file, configuration['logfilesize'][0], configuration['logfilesize'][1])
 
