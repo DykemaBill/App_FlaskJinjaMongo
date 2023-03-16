@@ -44,8 +44,8 @@ def orgs_load():
 orgs_load()
 
 # Create log folder if it does not already exist
-if not os.path.exists(log_file):
-    os.mkdir(log_file)
+if not os.path.exists(log_folder):
+    os.mkdir(log_folder)
 
 # Setup logging
 logger = setup_log(log_file, configuration['logfilesize'][0], configuration['logfilesize'][1])
