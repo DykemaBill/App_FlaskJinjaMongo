@@ -2,7 +2,7 @@
 # sudo docker compose up -d
 
 # Using mongodev user/password credentials for development only
-version: '1'
+version: '3'
 
 services:
 
@@ -30,5 +30,3 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: mongodev
       ME_CONFIG_BASICAUTH_USERNAME: mongodev
       ME_CONFIG_BASICAUTH_PASSWORD: mongodev
-    depends_on:
-      - mongodb_fjm

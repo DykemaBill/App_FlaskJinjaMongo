@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block body %}
+
+        <div class="main">
+
+            {% set filter_coll = request.args.get('data') %}
+            
+            <div class="buttonarea">
+                <a href="/" tabindex="-1">
+                    <button class="datalarge save">Collections &#9814;</button>
+                </a>
+            </div>
+
+            <br>
+            
+            {% if (g.org._index|int() != 999999999999) or (g.user['admin'] == True) %}
+
+                {% if recorddel is not defined %}
+
+                    Please view record use the delete button to remove it.
+
+                {% elif recorddel is defined %}
+
+                    Are you sure you want to delete this record, it will not be recoverable?
+
+                    <div class="recordsarea">
+
+                    <form action="/colldelete?data={{ filter_coll }}&num={{ recorddata['record_number']|int() }}" method="post">
+                    
+                    <!-- Record Number -->
+                    <p><br><input type="text"
+                    {% if ("error" in pagetitle) or ("Blocked..." in recorddel['record_name']) %}class="request maint"{% else %}class="request prod"{% endif %}
+                     style="text-align: left; width:80%" name="record_number" value="{{ recorddel['record_number']|int() }}" readonly></p>
+
+                    <!-- Record Name -->
+                    <p><input type="text"
+                    {% if ("error" in pagetitle) or ("Blocked..." in recorddel['record_name']) %}class="request prod"{% endif %}
+                     style="text-align: left; width:80%" name="record_name" value="{{ recorddel['record_name'] }}"
+                     readonly></p>
+                    
+                    {% set org_index = recorddel['record_org']|int() %}
+                    {% if (org_index != 999999999999) and (org_index < org_records|length) and (org_records[org_index]['name'] != "_deleted") %}
+                        {% set org_name = org_records[org_index]['name'] %}
+                    {% else %}
+                        {% set org_name = "No organization" %}
+                    {% endif %}
+                    <!-- Record owned by Organization -->
+                    <p><input type="text"
+                    {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                     style="text-align: left; width:80%" name="record_org" value="Org tied to: {{ org_name }}" readonly></p>
+
+                    {% set user_index = recorddel['record_user']|int() %}
+                    {% if (user_index != 999999999999) and (user_index < user_records|length) and (user_records[user_index]['login'] != "_deleted") %}
+                        {% set user_name = user_records[user_index]['namelast'] ~ ", " ~ user_records[user_index]['namefirst'] %}
+                    {% else %}
+                        {% set user_name = "No user" %}
+                    {% endif %}
+                    <!-- Record owned by User -->
+                    <p><input type="text"
+                    {% if "error" in pagetitle %}class="request maint"{% else %}class="request prod"{% endif %}
+                     style="text-align: left; width:80%" name="record_user" value="User tied to: {{ user_name }}" readonly></p>
+                    
+                    <br>
+                    </div>
+
+                    {% if recorddel['record_name'] != "Blocked..." %}
+                    <!-- Delete Button -->
+                    <div class="buttonarea">
+                        <button class="datalarge del" name="submit" value="deleterecord">Confirm Delete &#8856;</button>
+                    </div>
+                    {% endif %}
+
+                    </form>
+
+                {% endif %}
+
+            {% else %}
+
+            <div class="recordsarea">
+                No access to any records.<br><br>You might need to be assigned to an organization.
+            </div>
+            
+            {% endif %}
+
+        </div>
+
+{% endblock %}
