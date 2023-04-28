@@ -55,7 +55,7 @@ Application build with Python Flask/Jinja2 and MongoDB
 1.  MongoDB
     1.  Have your MongoDB server and/or Docker container running in a production location
     2.  Use a login and password different than what is supplied in the docker-compose.yml file
-    3.  You will need to change the db_conn settings to match your MongoDB installation after installing App_FlaskJinjaMongo
+    3.  You will need to change the ```"db_conn"``` configuration in the ```config/settings.cfg``` file to match your MongoDB installation after installing App_FlaskJinjaMongo
 1.  Python / Git
     1.  Install Python 3.10 or newer if not already installed
         1.  You will need to modify the repo ```Pipfile``` to match your installed version after your clone it
