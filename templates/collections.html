@@ -160,7 +160,7 @@
                             {% if recorddata_owner %}
                             <a href="/coll?data={{ filter_coll }}&num={{ recorddata['record_number']|int() }}"
                                 class="tooltip"><button class="requestsummary save" tabindex="-1">&#9998;</button></a>
-                            <a href="/notused"
+                            <a href="/colldelete?data={{ filter_coll }}&num={{ recorddata['record_number']|int() }}&requestingurl={{ request.full_path }}"
                                 class="tooltip"><button class="requestsummary del" tabindex="-1">&#8856;</button></a>
                             {% else %}
                             <a href="#" tabindex="-1"

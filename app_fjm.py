@@ -481,6 +481,7 @@ def colldeletepage():
     query_filter = dict({})
     if (filter_number != 999999999999):
         query_filter['record_number'] = filter_number
+    record_number = filter_number
     # Page
     page_title = "Delete Record"
     if users_exist == False: # No users exist, will need to prompt to create one
@@ -503,7 +504,7 @@ def colldeletepage():
             page_title = "You must pass a collection name"
             # Show page error
             return render_template('colldel.html', pagetitle=page_title)
-        if request.method == 'POST': # TODO: Left off here, completed GET already
+        if request.method == 'POST':
             # Put a delay in to avoid large numbers of accidental requests
             # time.sleep(2)
 
@@ -513,48 +514,59 @@ def colldeletepage():
                 try: # Record information
                     del_record = dict(db_inst.db[data_coll].find_one({'record_number': int(record_number) }))
                 except: # Error if failed
-                    logger.info(request.remote_addr + ' ==> Database error reading record to confirm delete (' + str(g.user['login']) + ')')
+                    logger.info(request.remote_addr + ' ==> Database error reading record to confirm delete (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
                     del_record = ({'record_number': 999999999999, 'record_name': "Name error", 'record_user': 999999999999, 'record_org': 999999999999})
                     page_title = "Database error reading record to confirm for delete page"
                 if g.user['admin'] == True or int(g.user['_index']) == int(del_record['record_user']) or (int(g.user['org']) == int(del_record['record_org']) and g.user['orgadmin'] == True): # User is admin, record owner, or record org admin
+                    # Get the calling page
+                    try:
+                        user_returnto = request.form['returnto']
+                    except:
+                        user_returnto = ""
                     # Delete the opportunity
                     db_inst.db[data_coll].delete_one({'record_number': int(record_number) })
                     # Log the delete
-                    logger.info(request.remote_addr + ' ==> Record deleted (' + str(g.user['login']) + '): ' + str(data_coll) + ': ' + str(record_number))
+                    logger.info(request.remote_addr + ' ==> Record deleted (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(data_coll) + ': ' + str(record_number))
                     page_title = "Record " + str(record_number) + " Deleted"
-                    return render_template('colldel.html', pagetitle=page_title)
+                    if len(user_returnto) > 0: # Check to see what page URL was looking for
+                        return redirect(user_returnto) # Go to calling page where delete was selected
+                    else:
+                        return render_template('colldel.html', pagetitle=page_title) # No calling page, just confirm it was deleted
                 else:
                     # Log that it was requested but not performed here
-                    logger.info(request.remote_addr + ' ==> Record delete denied for (' + str(g.user['login']) + '): ' + str(data_coll) + ': ' + str(record_number))
+                    logger.info(request.remote_addr + ' ==> Record delete denied for (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(data_coll) + ': ' + str(record_number))
                     page_title = "Record " + str(record_number) + " Delete Denied"
                     return render_template('colldel.html', pagetitle=page_title)
             else:
                 # Post request unrecognized
-                logger.info(request.remote_addr + ' ==> Record delete failed for (' + str(g.user['login']) + '): ' + str(data_coll) + ': ' + str(record_number))
-                page_title = "Record Deleted Incomplete Request"
+                logger.info(request.remote_addr + ' ==> Record delete failed for (' + str(g.user['login']) + ' - ' + str(g.org['name']) + '): ' + str(data_coll) + ': ' + str(record_number))
+                page_title = "Record Deleted Incomplete Request for Unknown Reason"
                 return render_template('colldel.html', pagetitle=page_title)
         else: # GET request
+            # End-user filter selections
+            forwardurl = ""
+            if 'requestingurl' in request.args: # Pass from URL if supplied
+                forwardurl = request.args['requestingurl']
             page_title = "Record Delete"
             if int(filter_number) == 999999999999: # No record passed
                 logger.info(request.remote_addr + ' ==> Delete record page for non-existant record (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
-                page_title = "Delete no record passed for collection " + str(data_coll)
+                page_title = "No Record Passed for Collection " + str(data_coll) + " to Delete"
                 return render_template('colldel.html', pagetitle=page_title)
             else: # Existing record
-                record_number = filter_number
                 del_record = {}
                 try: # Read record
                     del_record = dict(db_inst.db[data_coll].find_one({'record_number': int(record_number) }))
                 except: # Error if failed
                     logger.info(request.remote_addr + ' ==> Database error reading record to be deleted (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
                     del_record = ({'record_number': 999999999999, 'record_name': "Name error", 'record_user': 999999999999, 'record_org': 999999999999})
-                    page_title = "Database error reading record to be deleted"
+                    page_title = "Database Error Reading Record to be Deleted"
                 if g.user['admin'] == True or int(g.user['_index']) == int(del_record['record_user']) or (int(g.user['org']) == int(del_record['record_org']) and g.user['orgadmin'] == True): # User is admin, record owner, or record org admin
                     logger.info(request.remote_addr + ' ==> Existing record page to delete (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
                 else: # Denied access to record
                     logger.info(request.remote_addr + ' ==> Denied access to record to delete (' + str(g.user['login']) + ' - ' + str(g.org['name']) + ')')
                     del_record = ({'record_number': 999999999999, 'record_name': "Blocked...", 'record_user': 999999999999, 'record_org': 999999999999})
                     page_title = "Record Delete Access Error"
-                return render_template('colldel.html', pagetitle=page_title, recorddel=del_record, org_records=orgs, user_records=users)
+                return render_template('colldel.html', pagetitle=page_title, recorddel=del_record, org_records=orgs, user_records=users, returnto=forwardurl)
 
 # Logs page
 @fjm_app.route('/status')

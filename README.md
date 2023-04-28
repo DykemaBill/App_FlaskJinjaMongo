@@ -4,7 +4,7 @@ Application build with Python Flask/Jinja2 and MongoDB
 # To-Do's for the author
 - Build a simple version of the application - DONE
 - If no user exists, prompt user to create one at login - DONE
-- Implement record deleting - STARTED
+- Implement record deleting - DONE
 - Security testing (orgs, admin, orgadmin) - 
 - CSS class renames and remove unused - 
 - Installation directions in README - 
