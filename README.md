@@ -6,7 +6,7 @@ Application build with Python Flask/Jinja2 and MongoDB
 -   If no user exists, prompt user to create one at login - DONE
 -   Implement record deleting - DONE
 -   Installation directions in README - DONE
--   Active Directory authenication option - 
+-   Active Directory authentication option - 
 -   Security testing (orgs, admin, orgadmin) - 
 -   CSS class renames and remove unused - 
 -   Refactor primary Flask entry code file - 
